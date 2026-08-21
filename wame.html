@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💬 Bantuan — Chat Admin</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif;}
+        html,body {height:100%; overflow:hidden;}
+        body {background-color:#E5DDD5; background-image:url("https://user-images.githubusercontent.com/15075759/28719144-86dc7d70-738e-11e7-8e21-52c406099b2b.png"); display:flex; flex-direction:column;}
+
+        .header-chat {background:linear-gradient(90deg,#075E54,#128C7E); color:#fff; padding:12px 15px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 4px rgba(0,0,0,0.15); flex-shrink:0;}
+        .foto-admin {width:42px; height:42px; border-radius:50%; background:#FFD700; display:flex; align-items:center; justify-content:center; font-size:20px; color:#2C1A00; font-weight:bold; flex-shrink:0;}
+        .info-admin {flex:1;}
+        .info-admin h3 {font-size:15px; font-weight:600;}
+        .info-admin p {font-size:12px; opacity:0.85;}
+        .tombol-kembali {background:rgba(255,255,255,0.2); border:none; color:#fff; padding:8px 10px; border-radius:6px; font-size:12px; cursor:pointer;}
+        .tombol-kembali:hover {background:rgba(255,255,255,0.35);}
+
+        .area-pesan {flex:1; padding:12px; overflow-y:auto;}
+        .pesan {max-width:75%; padding:10px 14px; margin-bottom:8px; border-radius:8px; font-size:14px; line-height:1.5; word-wrap:break-word;}
+        .pesan.kamu {background:#DCF8C6; margin-left:auto; border-radius:8px 8px 0 8px;}
+        .pesan.admin {background:#fff; margin-right:auto; border-radius:8px 8px 8px 0;}
+        .waktu {font-size:10px; color:#666; text-align:right; margin-top:4px;}
+        .pesan-kosong {text-align:center; padding:40px 20px; color:#666; font-size:14px;}
+        .info-pengirim {font-size:11px; color:#888; margin-bottom:4px;}
+
+        .baris-kirim {display:flex; gap:10px; padding:10px 12px; background:#F0F0F0; align-items:center; flex-shrink:0;}
+        .baris-kirim input {flex:1; padding:12px 16px; border:none; border-radius:24px; font-size:15px; outline:none; background:#fff;}
+        .tombol-kirim {width:44px; height:44px; border-radius:50%; border:none; background:linear-gradient(135deg,#25D366,#128C7E); color:#fff; font-size:20px; cursor:pointer;}
+
+        .form-identitas {background:rgba(255,249,215,0.95); border:3px solid #DAA520; border-radius:12px; padding:20px; margin:20px; box-shadow:0 0 20px rgba(218,165,32,0.3);}
+        .form-identitas h3 {color:#B8860B; margin-bottom:15px; text-align:center;}
+        .form-identitas input {width:100%; padding:10px 12px; margin:8px 0; border:2px solid #F0C808; border-radius:6px; background:#FFF9E2; font-size:14px;}
+        .form-identitas button {width:100%; padding:11px; margin-top:10px; border:none; border-radius:6px; background:linear-gradient(180deg,#FFD700,#DAA520); color:#442F00; font-weight:bold; cursor:pointer; font-size:15px;}
+        .sudah-terisi {background:#E8FFE0; padding:10px; border-radius:6px; border-left:3px solid #32CD32; margin-bottom:10px; font-size:13px; color:#2E7D32;}
+    </style>
+</head>
+<body>
+
+    <div id="halamanIdentitas" class="form-identitas" style="display:none;">
+        <h3>👤 Identitas Anda</h3>
+        <p style="text-align:center; font-size:13px; color:#666; margin-bottom:10px;">Silakan isi agar Admin tahu siapa yang mengirim pesan</p>
+        <input type="text" id="namaPengguna" placeholder="Nama Lengkap">
+        <input type="email" id="gmailPengguna" placeholder="Email / Gmail">
+        <button onclick="simpanIdentitas()">✅ Mulai Chat</button>
+    </div>
+
+    <div id="halamanChat" style="display:none; flex-direction:column; height:100%;">
+        <div class="header-chat">
+            <div class="foto-admin">👤</div>
+            <div class="info-admin">
+                <h3>Admin CLOVERA UNION</h3>
+                <p>● Online</p>
+            </div>
+            <button class="tombol-kembali" onclick="window.location.href='dasbor.html'">Kembali</button>
+        </div>
+        <div id="areaPesan" class="area-pesan">
+            <p class="pesan-kosong">Mulai percakapan dengan admin...</p>
+        </div>
+        <div class="baris-kirim">
+            <input type="text" id="inputPesan" placeholder="Ketik pesan..." autocomplete="off">
+            <button class="tombol-kirim" onclick="kirimPesan()">➤</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let uidSaya = "";
+        let gmailSaya = "";
+        let namaSaya = "";
+        let pemantauPesan = null;
+
+        // === CEK SUDAH LOGIN ATAU BELUM ===
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // ✅ SUDAH LOGIN — OTOMATIS AMBIL DATA DARI AKUN
+                uidSaya = user.uid;
+                gmailSaya = user.email;
+                namaSaya = user.email.split("@")[0];
+                bukaChat();
+            } else {
+                // ⚠️ BELUM LOGIN — MINTA ISI IDENTITAS
+                document.getElementById("halamanIdentitas").style.display = "block";
+            }
+        });
+
+        // === SIMPAN IDENTITAS YANG DIISI PENGGUNA ===
+        function simpanIdentitas() {
+            const nama = document.getElementById("namaPengguna").value.trim();
+            const gmail = document.getElementById("gmailPengguna").value.trim();
+
+            if (!nama || !gmail) {
+                alert("⚠️ Isi Nama dan Email terlebih dahulu!");
+                return;
+            }
+
+            // Simpan identitas yang diisi pengguna
+            namaSaya = nama;
+            gmailSaya = gmail;
+            uidSaya = "TANPA_LOGIN_" + gmail.replace(/[^a-zA-Z0-9]/g, "_"); // Buat tanda pengenal sementara
+
+            bukaChat();
+        }
+
+        // === BUKA HALAMAN CHAT ===
+        function bukaChat() {
+            document.getElementById("halamanIdentitas").style.display = "none";
+            document.getElementById("halamanChat").style.display = "flex";
+            mulaiPantauPesan();
+        }
+
+        // === KIRIM PESAN ===
+        async function kirimPesan() {
+            const teks = document.getElementById("inputPesan").value.trim();
+            if (!teks) { alert("⚠️ Ketik pesan terlebih dahulu!"); return; }
+
+            try {
+                await db.collection("pesanChat").add({
+                    uid: uidSaya,              // ✅ UID asli atau tanda sementara
+                    email: gmailSaya,          // ✅ Gmail dari akun atau yang diisi
+                    nama: namaSaya,            // ✅ Nama dari akun atau yang diisi
+                    pengirim: "user",
+                    pesan: teks,
+                    waktu: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                document.getElementById("inputPesan").value = "";
+            } catch (err) {
+                alert("❌ Gagal kirim: " + err.message);
+            }
+        }
+
+        // === PANTAU PESAN ===
+        function mulaiPantauPesan() {
+            const area = document.getElementById("areaPesan");
+            
+            // ⚠️ TANPA ORDERBY WAKTU = TIDAK PERLU INDEX
+            pemantauPesan = db.collection("pesanChat")
+                .where("uid", "==", uidSaya)
+                .onSnapshot(snap => {
+                    area.innerHTML = "";
+                    if (snap.empty) {
+                        area.innerHTML = `<p class="pesan-kosong">Halo <b>${namaSaya}</b>! Silakan ketik pesan Anda...</p>`;
+                        return;
+                    }
+
+                    // Urutkan manual berdasarkan waktu
+                    let daftar = [];
+                    snap.forEach(d => daftar.push(d.data()));
+                    daftar.sort((a, b) => (a.waktu?.toDate() || 0) - (b.waktu?.toDate() || 0));
+
+                    daftar.forEach(d => {
+                        let jam = "--:--";
+                        if (d.waktu) {
+                            const tgl = d.waktu.toDate();
+                            jam = String(tgl.getHours()).padStart(2,'0') + ":" + String(tgl.getMinutes()).padStart(2,'0');
+                        }
+                        const kelas = d.pengirim === "admin" ? "admin" : "kamu";
+                        const pengirimNama = d.pengirim === "admin" ? "Admin" : "Anda";
+                        
+                        area.innerHTML += `
+                            <div class="info-pengirim">${pengirimNama} · ${jam}</div>
+                            <div class="pesan ${kelas}">${d.pesan}</div>
+                        `;
+                    });
+
+                    area.scrollTop = area.scrollHeight;
+                });
+        }
+    </script>
+</body>
+</html>

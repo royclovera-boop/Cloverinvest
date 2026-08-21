@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinyal Trading — CLOVERA UNION</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif;}
+        body {
+            background: linear-gradient(135deg, #0F1729, #1A2744);
+            min-height:100vh; padding:12px;
+        }
+        .container {max-width:420px; margin:0 auto;}
+
+        /* ✅ HEADER — TRANSPARAN, TEKS PUTIH RATA KIRI */
+        .header {
+            background: transparent;
+            padding:16px 0; margin-bottom:14px;
+            text-align:left; border:none; box-shadow:none;
+        }
+        .header h1 {font-size:18px; color:#FFFFFF; margin-bottom:4px; font-weight:700;}
+        .header p {font-size:12px; color:#FFD700; opacity:0.9;}
+
+        /* ✅ KARTU SINYAL — HITAM GELAP, TANPA GARIS */
+        .kartu-sinyal {
+            background:#1E293B;
+            border-radius:14px; border:none;
+            padding:16px; margin-bottom:12px;
+            box-shadow:0 4px 16px rgba(0,0,0,0.3);
+            transition:all 0.3s ease;
+        }
+        /* ✅ Tampilan jika Sinyal TERTUTUP PROFIT */
+        .kartu-sinyal.profit {
+            background:#1A3328;
+            box-shadow:0 4px 16px rgba(34,197,94,0.2);
+        }
+        /* ✅ Tampilan jika Sinyal TERTUTUP LOSS */
+        .kartu-sinyal.loss {
+            background:#331A1A;
+            box-shadow:0 4px 16px rgba(239,68,68,0.2);
+        }
+
+        .baris {margin-bottom:12px;}
+        .label {font-size:12px; font-weight:700; color:#FFD700; margin-bottom:4px; text-transform:uppercase;}
+        .nilai {font-size:18px; font-weight:800; color:#FFFFFF;}
+
+        .kotak-jenis {
+            display:inline-block; padding:6px 16px; border-radius:20px;
+            font-size:15px; font-weight:800; color:#fff;
+        }
+        .buy {background:linear-gradient(90deg, #228B22, #32CD32);}
+        .sell {background:linear-gradient(90deg, #CC0000, #FF4444);}
+
+        /* ✅ Label Status Hasil */
+        .label-hasil {
+            display:inline-block; padding:6px 16px; border-radius:20px;
+            font-size:14px; font-weight:800; color:#fff; margin-left:10px;
+        }
+        .hasil-profit {background:linear-gradient(90deg, #22C55E, #16A34A);}
+        .hasil-loss {background:linear-gradient(90deg, #EF4444, #DC2626);}
+
+        .grid-harga {display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;}
+        .kotak-tp {background:#1E3D2F; padding:10px; border-radius:8px; border:none;}
+        .kotak-sl {background:#3D1E1E; padding:10px; border-radius:8px; border:none;}
+        .label-tp {font-size:11px; color:#86EFAC; font-weight:700;}
+        .label-sl {font-size:11px; color:#FCA5A5; font-weight:700;}
+        .nilai-tp {font-size:16px; font-weight:800; color:#FFFFFF; margin-top:2px;}
+        .nilai-sl {font-size:16px; font-weight:800; color:#FFFFFF; margin-top:2px;}
+
+        .kotak-pips {
+            background:linear-gradient(135deg, #44402C, #B8860B);
+            padding:12px; border-radius:10px; text-align:center; margin:10px 0;
+        }
+        .kartu-sinyal.profit .kotak-pips {
+            background:linear-gradient(135deg, #1E3D2F, #22C55E);
+        }
+        .kartu-sinyal.loss .kotak-pips {
+            background:linear-gradient(135deg, #3D1E1E, #EF4444);
+        }
+        .nilai-pips {font-size:22px; font-weight:800; color:#FFFFFF;}
+        .label-pips {font-size:12px; color:#FFE473; font-weight:600;}
+
+        .kotak-catatan {
+            background:rgba(255,255,255,0.08); padding:12px; border-radius:8px;
+            border:none; margin-top:8px;
+            font-size:13px; color:#E5E5E5; line-height:1.6;
+        }
+        .kartu-sinyal.profit .kotak-catatan {background:rgba(34,197,94,0.1);}
+        .kartu-sinyal.loss .kotak-catatan {background:rgba(239,68,68,0.1);}
+
+        .waktu {font-size:11px; color:#94A3B8; text-align:right; margin-top:8px;}
+        .tidak-ada {text-align:center; padding:60px 20px; color:#94A3B8; font-size:14px;}
+        .loading {text-align:center; padding:60px 20px; color:#fff; font-size:15px;}
+        .btn-kembali {
+            display:block; text-align:center; margin-top:14px; padding:10px;
+            background:rgba(255,215,0,0.15); color:#FFD700;
+            border-radius:10px; text-decoration:none; font-size:14px; font-weight:600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>SINYAL TRADING</h1>
+            <p>Sinyal dari PT. CLOVERA GROUP</p>
+        </div>
+
+        <div id="loading" class="loading">Memuat sinyal...</div>
+        <div id="daftarSinyal"></div>
+        <a href="javascript:history.back()" class="btn-kembali">KEMBALI</a>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const EMPAT_JAM = 4 * 60 * 60 * 1000;
+
+        auth.onAuthStateChanged(user => {
+            if (!user) { window.location.href = "Login.html"; return; }
+            muatSinyal();
+        });
+
+        async function muatSinyal() {
+            try {
+                const snap = await db.collection("signal")
+                    .orderBy("waktu", "desc")
+                    .limit(10)
+                    .get();
+
+                document.getElementById("loading").style.display = "none";
+
+                const sekarang = new Date();
+                let html = "";
+                let adaSinyalAktif = false;
+
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const jenis = (d.jenis || "BUY").toUpperCase();
+                    const waktuSinyal = d.waktu ? d.waktu.toDate() : null;
+                    const status = d.status || "aktif";
+
+                    let lewatJam = false;
+                    if (waktuSinyal && status === "aktif") {
+                        const selisih = sekarang.getTime() - waktuSinyal.getTime();
+                        lewatJam = selisih > EMPAT_JAM;
+                    }
+
+                    if (lewatJam && status === "aktif") {
+                        return;
+                    }
+
+                    adaSinyalAktif = true;
+
+                    let kelasKartu = "";
+                    let labelHasil = "";
+                    if (status === "profit") {
+                        kelasKartu = "profit";
+                        labelHasil = `<span class="label-hasil hasil-profit">TERKUNCI PROFIT</span>`;
+                    } else if (status === "loss") {
+                        kelasKartu = "loss";
+                        labelHasil = `<span class="label-hasil hasil-loss">TERKUNCI LOSS</span>`;
+                    }
+
+                    const waktuTampil = waktuSinyal ? waktuSinyal.toLocaleString('id-ID') : "—";
+
+                    html += `
+                    <div class="kartu-sinyal ${kelasKartu}">
+                        <div class="baris">
+                            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+                                <span class="label">PAIR / INSTRUMEN</span>
+                                ${labelHasil}
+                            </div>
+                            <div class="nilai">${d.pair || "—"}</div>
+                        </div>
+
+                        <div class="baris">
+                            <div class="label">HARGA MASUK</div>
+                            <div class="nilai">$ ${(d.price || 0).toFixed(2)}</div>
+                        </div>
+
+                        <div class="baris">
+                            <div class="label">JENIS</div>
+                            <div class="kotak-jenis ${jenis==='BUY'?'buy':'sell'}">${jenis}</div>
+                        </div>
+
+                        <div class="grid-harga">
+                            <div class="kotak-tp">
+                                <div class="label-tp">TP (TAKE PROFIT)</div>
+                                <div class="nilai-tp">$ ${(d.tp || 0).toFixed(2)}</div>
+                            </div>
+                            <div class="kotak-sl">
+                                <div class="label-sl">SL (STOP LOSS)</div>
+                                <div class="nilai-sl">$ ${(d.sl || 0).toFixed(2)}</div>
+                            </div>
+                        </div>
+
+                        <div class="kotak-pips">
+                            <div class="label-pips">KEUNTUNGAN PIPS</div>
+                            <div class="nilai-pips">${d.pips || 0} PIPS</div>
+                        </div>
+
+                        <div class="baris">
+                            <div class="label">CATATAN</div>
+                            <div class="kotak-catatan">${d.catatan || `TP di harga ${d.tp||'—'} dan SL di harga ${d.sl||'—'}`}</div>
+                        </div>
+
+                        <div class="waktu">${waktuTampil}</div>
+                    </div>`;
+                });
+
+                if (!adaSinyalAktif) {
+                    html = `<div class="tidak-ada">Belum ada sinyal terbaru</div>`;
+                }
+
+                document.getElementById("daftarSinyal").innerHTML = html;
+
+            } catch (err) {
+                document.getElementById("loading").innerHTML = "Gagal memuat: " + err.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengaturan — Ubah Kata Sandi</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0F1729 0%, #1A2744 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .wadah {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        /* ✅ KARTU — TRANSPARAN, TANPA GARIS */
+        .kartu {
+            background: transparent;
+            border-radius: 16px;
+            box-shadow: none;
+            overflow: hidden;
+            border: none;
+        }
+
+        /* ✅ JUDUL BAGIAN — TRANSPARAN, RATA KIRI, TULISAN ANALIS */
+        .bagian-judul {
+            background: transparent;
+            padding: 0 0 24px 0;
+            text-align: left;
+            border-radius: 0;
+            border: none;
+        }
+
+        .bagian-judul h2 {
+            color: #FFD700;
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .bagian-judul p {
+            color: #DAA520;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .bagian-isi {
+            padding: 0;
+        }
+
+        .kotak-input {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #FFD700;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* ✅ INPUT — TANPA GARIS */
+        input {
+            width: 100%;
+            padding: 13px 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 253, 244, 0.1);
+            color: #FFD700;
+            font-size: 15px;
+            transition: 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            background: rgba(255, 253, 244, 0.15);
+            box-shadow: 0 0 0 3px rgba(218, 165, 32, 0.15);
+        }
+
+        input:disabled {
+            background: rgba(240, 240, 240, 0.1);
+            color: #DAA520;
+            cursor: not-allowed;
+        }
+
+        /* ✅ KOTAK PERSETUJUAN — TANPA GARIS */
+        .kotak-setuju {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 16px 0;
+            padding: 12px;
+            background: rgba(255, 248, 220, 0.1);
+            border-radius: 8px;
+            border: none;
+        }
+
+        .kotak-setuju input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            cursor: pointer;
+            accent-color: #B8860B;
+        }
+
+        .kotak-setuju label {
+            margin: 0;
+            font-size: 13px;
+            color: #FFD700;
+            line-height: 1.5;
+            cursor: pointer;
+        }
+
+        .tombol-ubah {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(180deg, #FFD700, #DAA520);
+            color: #442F00;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(218, 165, 32, 0.35);
+        }
+
+        .tombol-ubah:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(218, 165, 32, 0.45);
+        }
+
+        .tombol-ubah:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .tombol-kembali {
+            width: 100%;
+            padding: 11px;
+            background: transparent;
+            color: #B8860B;
+            border: none;
+            font-size: 14px;
+            margin-top: 12px;
+            cursor: pointer;
+        }
+
+        .tombol-kembali:hover {
+            color: #FFD700;
+        }
+
+        /* ✅ PESAN — TANPA GARIS SAMPING */
+        .pesan {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.5;
+            display: none;
+            border: none;
+        }
+
+        .pesan.sukses {
+            display: block;
+            background: rgba(232, 245, 233, 0.2);
+            color: #4CAF50;
+        }
+
+        .pesan.gagal {
+            display: block;
+            background: rgba(255, 235, 238, 0.2);
+            color: #EF5350;
+        }
+
+        .kotak-tunggu {
+            text-align: center;
+            padding: 40px 20px;
+            color: #FFD700;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="wadah">
+        <div class="kartu">
+            <div class="bagian-judul">
+                <h2> Pengaturan akun</h2>
+                <p>Ubah kata sandi Anda</p>
+            </div>
+
+            <div class="bagian-isi" id="bagianTunggu">
+                <div class="kotak-tunggu">
+                    <p>Sedang memverifikasi akun...</p>
+                </div>
+            </div>
+
+            <div class="bagian-isi" id="bagianForm" style="display: none;">
+                <div class="kotak-input">
+                    <label>Alamat Email</label>
+                    <input type="email" id="emailPengguna" disabled>
+                </div>
+
+                <div class="kotak-input">
+                    <label>Kata Sandi Lama</label>
+                    <input type="password" id="sandiLama" placeholder="Masukkan sandi saat ini">
+                </div>
+
+                <div class="kotak-input">
+                    <label>Kata Sandi Baru</label>
+                    <input type="password" id="sandiBaru" placeholder="Minimal 6 karakter">
+                </div>
+
+                <div class="kotak-input">
+                    <label>Konfirmasi Sandi Baru</label>
+                    <input type="password" id="konfirmasiSandi" placeholder="Ketik ulang sandi baru">
+                </div>
+
+                <div class="kotak-setuju">
+                    <input type="checkbox" id="centangSetuju" onchange="cekCentang()">
+                    <label for="centangSetuju">
+                        Saya menyetujui perubahan kata sandi dan memahami bahwa setelah diubah, saya wajib menggunakan sandi baru untuk login berikutnya.
+                    </label>
+                </div>
+
+                <button class="tombol-ubah" id="btnUbah" onclick="prosesUbahSandi()" disabled>
+                    Ubah Kata Sandi
+                </button>
+                <button class="tombol-kembali" onclick="window.location.href='dasbor.html'">Kembali ke Dasbor</button>
+
+                <div class="pesan" id="pesan"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === KONFIGURASI FIREBASE ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        const bagianTunggu = document.getElementById("bagianTunggu");
+        const bagianForm = document.getElementById("bagianForm");
+        const pesanEl = document.getElementById("pesan");
+        const btnUbah = document.getElementById("btnUbah");
+        const centangSetuju = document.getElementById("centangSetuju");
+
+        // === CEK CENTANGAN PERSETUJUAN ===
+        function cekCentang() {
+            btnUbah.disabled = !centangSetuju.checked;
+        }
+
+        // === CEK APAKAH SUDAH LOGIN ===
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                bagianTunggu.style.display = "none";
+                bagianForm.style.display = "block";
+                document.getElementById("emailPengguna").value = user.email;
+            } else {
+                alert("Silakan Login Terlebih Dahulu!");
+                window.location.href = "Login.html";
+            }
+        });
+
+        // === PROSES UBAH KATA SANDI ===
+        async function prosesUbahSandi() {
+            const sandiLama = document.getElementById("sandiLama").value.trim();
+            const sandiBaru = document.getElementById("sandiBaru").value.trim();
+            const konfirmasiSandi = document.getElementById("konfirmasiSandi").value.trim();
+            const emailPengguna = document.getElementById("emailPengguna").value;
+
+            pesanEl.className = "pesan";
+            pesanEl.textContent = "";
+
+            if (!sandiLama || !sandiBaru || !konfirmasiSandi) {
+                tampilPesan("Semua kolom wajib diisi!", "gagal");
+                return;
+            }
+
+            if (sandiBaru.length < 6) {
+                tampilPesan("Sandi baru minimal 6 karakter!", "gagal");
+                return;
+            }
+
+            if (sandiBaru !== konfirmasiSandi) {
+                tampilPesan("Konfirmasi sandi tidak cocok!", "gagal");
+                return;
+            }
+
+            if (sandiLama === sandiBaru) {
+                tampilPesan("Sandi baru tidak boleh sama dengan sandi lama!", "gagal");
+                return;
+            }
+
+            btnUbah.disabled = true;
+            centangSetuju.disabled = true;
+            btnUbah.textContent = "Sedang Diproses...";
+
+            try {
+                const user = auth.currentUser;
+                if (!user) throw new Error("Pengguna tidak ditemukan!");
+
+                const kredensial = firebase.auth.EmailAuthProvider.credential(emailPengguna, sandiLama);
+                await user.reauthenticateWithCredential(kredensial);
+
+                await user.updatePassword(sandiBaru);
+
+                tampilPesan("BERHASIL! Kata sandi telah diperbarui!", "sukses");
+
+                document.getElementById("sandiLama").value = "";
+                document.getElementById("sandiBaru").value = "";
+                document.getElementById("konfirmasiSandi").value = "";
+                centangSetuju.checked = false;
+                cekCentang();
+
+                setTimeout(() => {
+                    window.location.href = "dasbor.html";
+                }, 3000);
+
+            } catch (error) {
+                let pesanError = "Gagal mengubah sandi!";
+
+                if (error.code === "auth/wrong-password") {
+                    pesanError = "Kata sandi lama salah!";
+                } else if (error.code === "auth/too-many-requests") {
+                    pesanError = "Terlalu banyak percobaan! Coba lagi nanti.";
+                } else if (error.code === "auth/requires-recent-login") {
+                    pesanError = "Harap login ulang terlebih dahulu!";
+                }
+
+                tampilPesan(pesanError, "gagal");
+                console.error(error);
+            } finally {
+                btnUbah.disabled = !centangSetuju.checked;
+                centangSetuju.disabled = false;
+                btnUbah.textContent = "Ubah Kata Sandi";
+            }
+        }
+
+        function tampilPesan(teks, jenis) {
+            pesanEl.textContent = teks;
+            pesanEl.className = `pesan ${jenis}`;
+        }
+    </script>
+</body>
+</html>

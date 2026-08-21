@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran — CLOVERA UNION</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0F1729, #1A2744);
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+            margin: 0 auto;
+        }
+
+        .kartu {
+            background: #1E293B;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+            overflow: hidden;
+            border: none;
+        }
+
+        .header {
+            background: transparent;
+            padding: 20px 20px 10px 20px;
+            text-align: left;
+            color: #fff;
+            border: none;
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+
+        .langkah {
+            display: flex;
+            justify-content: flex-start;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .nomor-langkah {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            color: #E0E0E0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .nomor-langkah.aktif {
+            background: #FFD700;
+            color: #1A1A1A;
+            box-shadow: 0 2px 6px rgba(255,215,0,0.25);
+        }
+
+        .isi {
+            padding: 20px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .isi::-webkit-scrollbar {width:4px;}
+        .isi::-webkit-scrollbar-thumb {background:#4B5563; border-radius:4px;}
+
+        h2 {
+            font-size: 15px;
+            color: #FFFFFF;
+            margin-bottom: 16px;
+            padding-bottom: 6px;
+            border: none;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #E5E5E5;
+            margin-bottom: 5px;
+        }
+
+        label span {color: #FF6B6B;}
+
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+            background: #334155;
+            color: #FFFFFF;
+            transition: 0.2s;
+        }
+
+        input::placeholder {color: #94A3B8;}
+
+        input:focus {
+            outline: none;
+            background: #3F4E67;
+            box-shadow: 0 0 0 3px rgba(255,215,0,0.15);
+        }
+
+        .tombol {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tombol-emas {
+            background: linear-gradient(180deg, #FFD700, #DAA520);
+            color: #3F2A00;
+            margin-top: 8px;
+        }
+
+        .tombol-emas:hover {transform: translateY(-1px);}
+        .tombol-emas:disabled {opacity: 0.6; cursor: not-allowed; transform: none;}
+
+        .tombol-balik {
+            background: #374151;
+            color: #E5E5E5;
+            margin-top: 10px;
+        }
+
+        .pesan {
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            display: none;
+            line-height: 1.6;
+            border: none;
+        }
+
+        .sukses {background: #1E3D2F; color: #A7F3D0; display: block;}
+        .error {background: #3D1E1E; color: #FCA5A5; display: block;}
+        .peringatan {background: #3F361C; color: #FDE047; display: block;}
+
+        .link {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #94A3B8;
+        }
+
+        .link a {
+            color: #FFD700;
+            font-weight: 600;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="kartu">
+
+            <!-- HEADER -->
+            <div class="header">
+                <h1>PENDAFTARAN ANGGOTA</h1>
+                <div class="langkah">
+                    <div class="nomor-langkah aktif" id="langkah1">1</div>
+                    <div class="nomor-langkah" id="langkah2">2</div>
+                </div>
+            </div>
+
+            <div class="isi">
+
+                <!-- === TAHAP 1: AKUN LOGIN === -->
+                <div id="formTahap1">
+                    <h2>Langkah 1 — Buat Akun Akses</h2>
+
+                    <label>Email / Gmail <span>*</span></label>
+                    <input type="email" id="email" placeholder="contoh@gmail.com" autocomplete="email">
+
+                    <label>Kata Sandi <span>*</span> (min. 6 karakter)</label>
+                    <input type="password" id="sandi" placeholder="Buat kata sandi" autocomplete="new-password">
+
+                    <button class="tombol tombol-emas" onclick="lanjutKeTahap2()">
+                        Lanjut
+                    </button>
+                </div>
+
+                <!-- === TAHAP 2: DATA DIRI === -->
+                <div id="formTahap2" style="display:none;">
+                    <h2>Langkah 2 — Data Diri</h2>
+
+                    <label>Nama Lengkap <span>*</span></label>
+                    <input type="text" id="namaLengkap" placeholder="Masukkan nama lengkap">
+
+                    <button class="tombol tombol-emas" id="btnDaftar" onclick="kirimPendaftaran()">
+                        KIRIM PENDAFTARAN
+                    </button>
+
+                    <button class="tombol tombol-balik" onclick="kembaliKeTahap1()">
+                        Kembali
+                    </button>
+                </div>
+
+                <!-- PESAN -->
+                <div class="pesan" id="kotakPesan"></div>
+
+                <!-- LINK MASUK -->
+                <div class="link">
+                    Sudah punya akun? <a href="Login.html">Masuk di sini</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === KONFIGURASI FIREBASE ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Simpan sementara dari tahap 1
+        let emailSementara = "";
+        let sandiSementara = "";
+
+        // === TAMPILKAN PESAN ===
+        function tampilPesan(teks, jenis = "error") {
+            const pesan = document.getElementById("kotakPesan");
+            pesan.style.display = "block";
+            pesan.className = `pesan ${jenis}`;
+            pesan.textContent = teks;
+        }
+
+        // === CEK GMAIL SUDAH TERDAFTAR ===
+        async function cekGmail(email) {
+            try {
+                const emailBersih = email.toLowerCase();
+
+                const snapPengguna = await db.collection("pengguna")
+                    .where("email", "==", emailBersih)
+                    .limit(1)
+                    .get();
+                if (!snapPengguna.empty) return true;
+
+                const snapCadangan = await db.collection("cadangan")
+                    .where("emailPengguna", "==", emailBersih)
+                    .limit(1)
+                    .get();
+                return !snapCadangan.empty;
+
+            } catch (e) {
+                console.log("Error cek Gmail:", e);
+                return false;
+            }
+        }
+
+        // === LANJUT KE TAHAP 2 ===
+        async function lanjutKeTahap2() {
+            const email = document.getElementById("email").value.trim();
+            const sandi = document.getElementById("sandi").value.trim();
+            const pesan = document.getElementById("kotakPesan");
+            pesan.style.display = "none";
+
+            if (!email || !sandi) {
+                tampilPesan("Isi Email & Kata Sandi dulu!", "peringatan");
+                return;
+            }
+            if (sandi.length < 6) {
+                tampilPesan("Kata sandi minimal 6 karakter!", "peringatan");
+                return;
+            }
+
+            const gmailSudahAda = await cekGmail(email);
+            if (gmailSudahAda) {
+                tampilPesan("GMAIL INI SUDAH TERDAFTAR!\nGunakan Gmail lain atau masuk ke akun yang sudah ada.", "peringatan");
+                return;
+            }
+
+            emailSementara = email.toLowerCase();
+            sandiSementara = sandi;
+
+            document.getElementById("formTahap1").style.display = "none";
+            document.getElementById("formTahap2").style.display = "block";
+            document.getElementById("langkah1").classList.remove("aktif");
+            document.getElementById("langkah2").classList.add("aktif");
+        }
+
+        // === KEMBALI KE TAHAP 1 ===
+        function kembaliKeTahap1() {
+            document.getElementById("formTahap2").style.display = "none";
+            document.getElementById("formTahap1").style.display = "block";
+            document.getElementById("langkah2").classList.remove("aktif");
+            document.getElementById("langkah1").classList.add("aktif");
+            document.getElementById("kotakPesan").style.display = "none";
+        }
+
+        // === KIRIM SEMUA DATA KE FIREBASE ===
+        async function kirimPendaftaran() {
+            const namaLengkap = document.getElementById("namaLengkap").value.trim();
+            const pesan = document.getElementById("kotakPesan");
+            const tombol = document.getElementById("btnDaftar");
+
+            pesan.style.display = "none";
+
+            if (!namaLengkap) {
+                tampilPesan("Masukkan nama lengkap!", "peringatan");
+                return;
+            }
+
+            const gmailSudahAda = await cekGmail(emailSementara);
+            if (gmailSudahAda) {
+                tampilPesan("GMAIL INI SUDAH TERDAFTAR! Gunakan Gmail lain.", "peringatan");
+                return;
+            }
+
+            tombol.disabled = true;
+            tombol.textContent = "Diproses...";
+
+            try {
+                const kredensial = await auth.createUserWithEmailAndPassword(emailSementara, sandiSementara);
+                const user = kredensial.user;
+
+                await user.updateProfile({ displayName: namaLengkap });
+
+                await db.doc("pengguna/" + user.uid).set({
+                    atasNama: namaLengkap,
+                    email: emailSementara,
+                    saldo: 0,
+                    saldoRupiah: 0,
+                    keuntungan: 0,
+                    instrumenAktif: null,
+                    instrumenAktifNama: "— Belum Dipilih —",
+                    tanggalDaftar: firebase.firestore.FieldValue.serverTimestamp(),
+                    statusAkun: "aktif"
+                });
+
+                tampilPesan("PENDAFTARAN BERHASIL!\n\nSilakan masuk dengan email & kata sandi Anda...", "sukses");
+
+                setTimeout(() => {
+                    window.location.href = "Login.html";
+                }, 3000);
+
+            } catch (err) {
+                console.log("Error:", err);
+                let teks = "Terjadi kesalahan, coba lagi.";
+                if (err.code === "auth/email-already-in-use") {
+                    teks = "GMAIL SUDAH TERDAFTAR! Gunakan Gmail lain.";
+                } else if (err.code === "auth/invalid-email") {
+                    teks = "Format email salah!";
+                } else if (err.code === "auth/weak-password") {
+                    teks = "Kata sandi terlalu lemah! Minimal 6 karakter.";
+                }
+                tampilPesan(teks, "error");
+                tombol.disabled = false;
+                tombol.textContent = "KIRIM PENDAFTARAN";
+            }
+        }
+    </script>
+</body>
+</html>

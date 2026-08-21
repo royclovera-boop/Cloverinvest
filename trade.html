@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRADING INSTRUMEN — CLOVERA UNION</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Roboto, sans-serif;}
+        body {
+            background: linear-gradient(135deg, #0F1729 0%, #1A2744 50%, #0F1729 100%);
+            min-height:100vh; padding:12px;
+        }
+        .container {max-width:720px; margin:0 auto;}
+
+        .header {
+            background: transparent;
+            padding:14px 0; margin-bottom:14px;
+            border-radius:0; box-shadow:none; border:none;
+        }
+        .header h1 {font-size:17px; color:#FFFFFF; font-weight:800;}
+        .header p {font-size:12px; color:#D4D4D4; margin-top:3px;}
+
+        .status-kartu {
+            background:rgba(30, 41, 59, 0.8); backdrop-filter:blur(10px);
+            border-radius:10px; padding:12px 14px; margin-bottom:14px;
+            border:none;
+        }
+        .status-saatini {
+            display:flex; align-items:center; flex-wrap:wrap; gap:8px;
+            font-size:13px; color:#E5E5E5;
+        }
+        .nama-instrumen-saatini {
+            font-weight:700; font-size:14px; color:#FFD700;
+            background:rgba(255,215,0,0.12); padding:2px 10px; border-radius:14px;
+        }
+        .kotak-pending {
+            margin-top:8px; padding:8px 12px; background:rgba(255,152,0,0.12);
+            border-radius:6px; border:none; display:none;
+        }
+        .teks-pending {color:#FFE082; font-size:12px;}
+
+        .instrumen-grid {
+            display:grid; grid-template-columns:repeat(2, 1fr);
+            gap:10px; margin-bottom:14px;
+        }
+        .kartu-instrumen {
+            background:#1E293B;
+            border:none; border-radius:10px; padding:12px;
+            cursor:pointer; transition:all 0.25s ease;
+        }
+        .kartu-instrumen:hover {
+            transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.3);
+        }
+        .kartu-instrumen.terpilih {
+            background:#263449;
+            box-shadow:0 0 0 2px rgba(255,215,0,0.2);
+        }
+
+        .logo-box {display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+        .logo {width:40px; height:40px; border-radius:10px; object-fit:cover; border:none;}
+        .nama-instrumen {font-size:14px; font-weight:800; color:#FFFFFF;}
+        .kode {font-size:10px; color:#94A3B8; margin-top:1px;}
+
+        .info-harga {margin-top:6px; padding-top:6px; border:none;}
+        .harga {font-size:18px; font-weight:800; color:#FFD700;}
+        .perubahan {font-size:13px; margin-top:4px; font-weight:700; display:flex; align-items:center; gap:4px;}
+        .naik {color:#4ADE80;}
+        .turun {color:#F87171;}
+        .persentase {font-size:12px; margin-top:2px; font-weight:600;}
+
+        .jumlah-pengguna {
+            margin-top:8px; padding-top:6px; border:none;
+            font-size:12px; color:#CBD5E1;
+        }
+        .jumlah-angka {
+            font-weight:800; font-size:16px; color:#FFD700;
+        }
+
+        .grafik-box {
+            background:#FFFFFF; border-radius:10px; padding:14px;
+            border:none; margin-bottom:12px;
+            box-shadow:0 4px 16px rgba(0,0,0,0.1);
+        }
+        .judul-grafik {
+            font-size:14px; font-weight:800; color:#333333;
+            margin-bottom:8px; padding-bottom:6px;
+            border:none;
+            display:flex; justify-content:space-between; align-items:center;
+        }
+        .total-keuntungan {
+            font-size:15px; font-weight:800; padding:4px 12px; border-radius:20px;
+        }
+        .total-positif {background:#E8F5E9; color:#2E7D32;}
+        .total-negatif {background:#FFEBEE; color:#C62828;}
+        #grafik {min-height:200px;}
+        .pesan-grafik {text-align:center; padding:40px 16px; color:#888; font-size:14px;}
+
+        .tombol-simpan {
+            background:linear-gradient(180deg, #4CAF50, #2E7D32);
+            color:#fff; border:none; padding:11px 20px; border-radius:10px;
+            font-size:14px; font-weight:700; cursor:pointer; width:100%;
+            transition:all 0.2s; box-shadow:0 3px 10px rgba(76,175,80,0.2);
+        }
+        .tombol-simpan:disabled {opacity:0.5; cursor:not-allowed;}
+
+        .keterangan {
+            margin-top:12px; padding:10px 12px; background:rgba(255,215,0,0.08);
+            border-radius:8px; border:none;
+            font-size:11.5px; color:#FFE082; line-height:1.5;
+        }
+        .pesan {
+            margin-top:12px; padding:10px 14px; border-radius:8px;
+            font-size:13px; display:none; font-weight:500;
+            border:none;
+        }
+        .berhasil {display:block; background:rgba(76,175,80,0.15); color:#A7F3D0;}
+        .info {display:block; background:rgba(33,150,243,0.15); color:#93C5FD;}
+        .error {display:block; background:rgba(239,68,68,0.15); color:#FCA5A5;}
+
+        .loading {text-align:center; padding:60px 20px; color:#fff; font-size:15px;}
+        .kartu-penting {
+            background:rgba(255,152,0,0.1); border:none;
+            border-radius:8px; padding:10px 12px; margin-bottom:12px;
+            color:#FFE082; font-size:11.5px; line-height:1.5;
+        }
+        .bagian-login {
+            text-align:center; padding:30px; background:rgba(255,255,255,0.05);
+            border-radius:10px; color:#fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>PILIH INSTRUMEN TRADING</h1>
+            <p>Pilih instrumen → Ajukan → Menunggu persetujuan Admin</p>
+        </div>
+
+        <div id="bagianLogin" class="bagian-login" style="display:none;">
+            <h3 style="margin-bottom:14px; color:#FFD700; font-size:16px;">Silakan Login Dulu</h3>
+            <button class="tombol-simpan" onclick="window.location.href='Login.html'" style="max-width:240px; margin:0 auto;">MASUK KE AKUN</button>
+        </div>
+
+        <div id="bagianData" style="display:none;">
+
+            <div class="status-kartu">
+                <div class="status-saatini">
+                    Instrumen Aktif:
+                    <span class="nama-instrumen-saatini" id="instrumenSaatIni">— Belum Dipilih —</span>
+                </div>
+                <div id="kotakPending" class="kotak-pending">
+                    <span class="teks-pending">Menunggu persetujuan: <strong id="namaPermintaan" style="color:#FFD700;"></strong></span>
+                </div>
+            </div>
+
+            <div class="kartu-penting">
+                Perhatian: Grafik merupakan hasil kelola manajer investasi, info lebih lanjut ada di menu Tentang Kami.
+            </div>
+
+            <div class="instrumen-grid">
+                <div class="kartu-instrumen" id="kartu-XAU" onclick="pilihInstrumen('managerXauusd', 'XAU/USD', 'loginwall/xau.png')">
+                    <div class="logo-box">
+                        <img src="loginwall/xau.png" class="logo" alt="XAU">
+                        <div>
+                            <div class="nama-instrumen">XAU/USD</div>
+                            <div class="kode">managerXauusd</div>
+                        </div>
+                    </div>
+                    <div class="info-harga">
+                        <div class="harga" id="harga-XAU">—</div>
+                        <div class="perubahan" id="ubah-XAU">—</div>
+                        <div class="persentase" id="persen-XAU"></div>
+                    </div>
+                    <div class="jumlah-pengguna">
+                        Pengguna: <span class="jumlah-angka" id="jumlah-XAU">0</span>
+                    </div>
+                </div>
+
+                <div class="kartu-instrumen" id="kartu-BTC" onclick="pilihInstrumen('managerBtcusd', 'BTC/USD', 'loginwall/btc.png')">
+                    <div class="logo-box">
+                        <img src="loginwall/btc.png" class="logo" alt="BTC">
+                        <div>
+                            <div class="nama-instrumen">BTC/USD</div>
+                            <div class="kode">managerBtcusd</div>
+                        </div>
+                    </div>
+                    <div class="info-harga">
+                        <div class="harga" id="harga-BTC">—</div>
+                        <div class="perubahan" id="ubah-BTC">—</div>
+                        <div class="persentase" id="persen-BTC"></div>
+                    </div>
+                    <div class="jumlah-pengguna">
+                        Pengguna: <span class="jumlah-angka" id="jumlah-BTC">0</span>
+                    </div>
+                </div>
+
+                <div class="kartu-instrumen" id="kartu-AUD" onclick="pilihInstrumen('managerAudusd', 'AUD/USD', 'loginwall/aud.png')">
+                    <div class="logo-box">
+                        <img src="loginwall/aud.png" class="logo" alt="AUD">
+                        <div>
+                            <div class="nama-instrumen">AUD/USD</div>
+                            <div class="kode">managerAudusd</div>
+                        </div>
+                    </div>
+                    <div class="info-harga">
+                        <div class="harga" id="harga-AUD">—</div>
+                        <div class="perubahan" id="ubah-AUD">—</div>
+                        <div class="persentase" id="persen-AUD"></div>
+                    </div>
+                    <div class="jumlah-pengguna">
+                        Pengguna: <span class="jumlah-angka" id="jumlah-AUD">0</span>
+                    </div>
+                </div>
+
+                <div class="kartu-instrumen" id="kartu-TRD" onclick="pilihInstrumen('tradingData', 'CLVC01', 'loginwall/Td.png')">
+                    <div class="logo-box">
+                        <img src="loginwall/Td.png" class="logo" alt="TRD">
+                        <div>
+                            <div class="nama-instrumen">CLVC01</div>
+                            <div class="kode">tradingData</div>
+                        </div>
+                    </div>
+                    <div class="info-harga">
+                        <div class="harga" id="harga-TRD">—</div>
+                        <div class="perubahan" id="ubah-TRD">—</div>
+                        <div class="persentase" id="persen-TRD"></div>
+                    </div>
+                    <div class="jumlah-pengguna">
+                        Pengguna: <span class="jumlah-angka" id="jumlah-TRD">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grafik-box">
+                <div class="judul-grafik" id="judulGrafik">
+                    <span>Pilih instrumen untuk melihat grafik</span>
+                    <span class="total-keuntungan" id="totalKeuntungan" style="display:none;"></span>
+                </div>
+                <div id="grafik"></div>
+                <div id="pesanGrafik" class="pesan-grafik">Silakan pilih instrumen di atas</div>
+            </div>
+
+            <button class="tombol-simpan" id="tombolAjukan" onclick="ajukanPermintaan()" style="display:none;">AJUKAN PERUBAHAN</button>
+            <div id="pesanSimpan" class="pesan"></div>
+
+            <div class="keterangan">
+                Alur: Pilih → Ajukan → Menunggu Admin → Disetujui → Berlaku otomatis.
+            </div>
+        </div>
+
+        <div id="loading" class="loading">Memverifikasi akun...</div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let userSekarang = null;
+        let uidPengguna = null;
+        let emailPengguna = null;
+        let instrumenTerpilih = null;
+        let namaInstrumenTerpilih = null;
+        let grafik = null;
+        
+        let instrumenLamaPengguna = null;
+        let namaInstrumenLamaPengguna = null;
+
+        function formatUang(nilai) {
+            return (nilai >= 0 ? "+$" : "-$") + Math.abs(nilai).toFixed(2);
+        }
+
+        // ✅ HITUNG PERSENTASE BENAR — pakai nilai absolut sebagai dasar
+        function hitungPersentase(sebelum, sesudah) {
+            const dasar = Math.abs(sebelum);
+            if (!dasar || dasar === 0) return null;
+            return ((sesudah - sebelum) / dasar) * 100;
+        }
+
+        auth.onAuthStateChanged(async user => {
+            document.getElementById("loading").style.display = "none";
+            if (user) {
+                userSekarang = user;
+                uidPengguna = user.uid;
+                emailPengguna = user.email;
+                document.getElementById("bagianData").style.display = "block";
+                await muatDataPengguna();
+                await muatSemuaInstrumen();
+                pantauPermintaanPending();
+            } else {
+                document.getElementById("bagianLogin").style.display = "block";
+            }
+        });
+
+        async function muatDataPengguna() {
+            try {
+                const snap = await db.doc("pengguna/" + uidPengguna).get();
+                if (snap.exists) {
+                    const data = snap.data();
+                    
+                    instrumenLamaPengguna = data.instrumenAktif || null;
+                    namaInstrumenLamaPengguna = data.instrumenAktifNama || "Belum Ada";
+                    
+                    if (data.instrumenAktifNama) {
+                        document.getElementById("instrumenSaatIni").textContent = data.instrumenAktifNama;
+                    } else if (data.instrumenAktif) {
+                        document.getElementById("instrumenSaatIni").textContent = data.instrumenAktif;
+                    }
+                } else {
+                    instrumenLamaPengguna = null;
+                    namaInstrumenLamaPengguna = "Belum Ada";
+                }
+            } catch (err) {
+                console.log("Belum ada data:", err.message);
+                instrumenLamaPengguna = null;
+                namaInstrumenLamaPengguna = "Belum Ada";
+            }
+        }
+
+        function pantauPermintaanPending() {
+            db.collection("permintaanInstrumen").doc(uidPengguna).onSnapshot(snap => {
+                if (snap.exists && snap.data().status === "PENDING") {
+                    const doc = snap.data();
+                    document.getElementById("kotakPending").style.display = "block";
+                    document.getElementById("namaPermintaan").textContent = doc.instrumenBaruNama;
+                } else {
+                    document.getElementById("kotakPending").style.display = "none";
+                }
+            });
+        }
+
+        async function muatSemuaInstrumen() {
+            const daftar = [
+                {id:'managerXauusd', dok:'xauusd', kode:'XAU'},
+                {id:'managerBtcusd', dok:'btcusd', kode:'BTC'},
+                {id:'managerAudusd', dok:'audusd', kode:'AUD'},
+                {id:'tradingData', dok:'clvc01', kode:'TRD'}
+            ];
+
+            for(const item of daftar) {
+                try {
+                    const snapJumlah = await db.doc("Instrumen/" + item.dok).get();
+                    let jumlah = 0;
+                    if (snapJumlah.exists) {
+                        const data = snapJumlah.data();
+                        jumlah = data.jumblah || 0;
+                    }
+                    document.getElementById(`jumlah-${item.kode}`).textContent = jumlah;
+
+                    const snapData = await db.collection(item.id).orderBy("timestamp", "asc").get();
+                    if (!snapData.empty) {
+                        const docs = snapData.docs;
+                        
+                        let nilaiSebelum = 0;
+                        let nilaiSekarang = 0;
+                        let saldoAkumulasi = 0;
+                        let semuaNilai = [];
+                        
+                        docs.forEach((doc) => {
+                            const d = doc.data();
+                            const pl = Number(d.pl) || 0;
+                            saldoAkumulasi += pl;
+                            semuaNilai.push(saldoAkumulasi);
+                        });
+                        
+                        // ✅ Ambil bulan lalu = nilai kedua dari akhir
+                        // ✅ Ambil bulan sekarang = nilai terakhir
+                        if (semuaNilai.length >= 2) {
+                            nilaiSebelum = semuaNilai[semuaNilai.length - 2];
+                            nilaiSekarang = semuaNilai[semuaNilai.length - 1];
+                        } else if (semuaNilai.length === 1) {
+                            nilaiSebelum = 0;
+                            nilaiSekarang = semuaNilai[0];
+                        }
+                        
+                        document.getElementById(`harga-${item.kode}`).textContent = formatUang(nilaiSekarang);
+                        
+                        const elUbah = document.getElementById(`ubah-${item.kode}`);
+                        const elPersen = document.getElementById(`persen-${item.kode}`);
+                        const persen = hitungPersentase(nilaiSebelum, nilaiSekarang);
+                        
+                        // ✅ LOGIKA DIPERBAIKI: cek selisih, BUKAN nilai sekarang
+                        const selisih = nilaiSekarang - nilaiSebelum;
+                        
+                        if (selisih > 0) {
+                            elUbah.innerHTML = "↑ NAIK";
+                            elUbah.className = "perubahan naik";
+                            elPersen.style.color = "#4ADE80";
+                        } else if (selisih < 0) {
+                            elUbah.innerHTML = "↓ TURUN";
+                            elUbah.className = "perubahan turun";
+                            elPersen.style.color = "#F87171";
+                        } else {
+                            elUbah.textContent = "— SAMA";
+                            elUbah.className = "perubahan";
+                            elPersen.style.color = "#94A3B8";
+                        }
+                        
+                        if (persen !== null) {
+                            elPersen.textContent = (persen >= 0 ? "+" : "") + persen.toFixed(2) + "%";
+                        } else {
+                            elPersen.textContent = "—";
+                        }
+                    }
+                } catch(e) {
+                    console.log("Error " + item.dok + ":", e.message);
+                }
+            }
+        }
+
+        async function pilihInstrumen(idDokumen, namaTampil, logoUrl) {
+            instrumenTerpilih = idDokumen;
+            namaInstrumenTerpilih = namaTampil;
+
+            document.querySelectorAll('.kartu-instrumen').forEach(k=>k.classList.remove('terpilih'));
+            if(idDokumen==='managerXauusd') document.getElementById('kartu-XAU').classList.add('terpilih');
+            else if(idDokumen==='managerBtcusd') document.getElementById('kartu-BTC').classList.add('terpilih');
+            else if(idDokumen==='managerAudusd') document.getElementById('kartu-AUD').classList.add('terpilih');
+            else if(idDokumen==='tradingData') document.getElementById('kartu-TRD').classList.add('terpilih');
+
+            document.getElementById('judulGrafik').innerHTML = `${namaTampil} <span class="total-keuntungan" id="totalKeuntungan"></span>`;
+            document.getElementById('tombolAjukan').style.display = "block";
+            document.getElementById('pesanGrafik').style.display = "none";
+
+            await muatGrafik(idDokumen, namaTampil);
+        }
+
+        async function muatGrafik(idDokumen, namaTampil) {
+            try {
+                const snap = await db.collection(idDokumen).orderBy("timestamp", "asc").get();
+                if (snap.empty) {
+                    document.getElementById('grafik').innerHTML = `<p style="text-align:center; color:#888; padding:30px;">Belum ada data untuk ${namaTampil}</p>`;
+                    document.getElementById('totalKeuntungan').style.display = "none";
+                    if(grafik) { grafik.destroy(); grafik=null; }
+                    return;
+                }
+
+                let label = [];
+                let nilai = [];
+                let saldoAkhir = 0;
+                let nilaiBulanLalu = 0;
+
+                snap.forEach((doc, idx) => {
+                    const d = doc.data();
+                    const pl = Number(d.pl) || 0;
+                    saldoAkhir += pl;
+                    nilai.push(parseFloat(saldoAkhir.toFixed(2)));
+                    const waktu = d.timestamp ? d.timestamp.toDate() : null;
+                    label.push(waktu ? `${waktu.getDate()}/${waktu.getMonth()+1}` : "—");
+                    
+                    if (idx === snap.docs.length - 2) nilaiBulanLalu = saldoAkhir;
+                });
+
+                const totalEl = document.getElementById('totalKeuntungan');
+                totalEl.style.display = "inline-block";
+                totalEl.textContent = formatUang(saldoAkhir);
+                totalEl.className = "total-keuntungan " + (saldoAkhir >= 0 ? "total-positif" : "total-negatif");
+
+                const opsi = {
+                    chart: { type: 'line', height:200, toolbar: { show: false } },
+                    stroke: { curve: 'smooth', width: 3 },
+                    colors: [saldoAkhir >= 0 ? '#32CD32' : '#EF5350'],
+                    markers: { size: 0 },
+                    series: [{ name: namaTampil, data: nilai }],
+                    xaxis: { categories: label, labels: { style: { colors: '#666', fontSize:'10px' } } },
+                    yaxis: { 
+                        labels: { 
+                            formatter: val => (val >= 0 ? "$" : "-$") + Math.abs(val).toFixed(0), 
+                            style:{fontSize:'10px'} 
+                        } 
+                    },
+                    tooltip: { y: { formatter: val => formatUang(val) } },
+                    grid: { borderColor: '#E8E4D0' }
+                };
+
+                if(grafik) grafik.destroy();
+                grafik = new ApexCharts(document.querySelector("#grafik"), opsi);
+                grafik.render();
+
+            } catch (err) {
+                document.getElementById('grafik').innerHTML = `<p style="color:red; text-align:center;">Gagal memuat: ${err.message}</p>`;
+            }
+        }
+
+        async function ajukanPermintaan() {
+            if(!instrumenTerpilih) { alert("Pilih instrumen terlebih dahulu!"); return; }
+
+            if(!confirm(`Ajukan perubahan:\n\nDari: ${namaInstrumenLamaPengguna}\nMenjadi: ${namaInstrumenTerpilih}\n\nMenunggu persetujuan Admin. Lanjutkan?`)) return;
+
+            const pesan = document.getElementById('pesanSimpan');
+            pesan.style.display = "none";
+
+            try {
+                await db.collection("permintaanInstrumen").doc(uidPengguna).set({
+                    uidPengguna: uidPengguna,
+                    emailPengguna: emailPengguna,
+                    namaPengguna: userSekarang.displayName || "Pengguna",
+                    
+                    instrumenLama: instrumenLamaPengguna,
+                    instrumenLamaNama: namaInstrumenLamaPengguna,
+                    
+                    instrumenBaru: instrumenTerpilih,
+                    instrumenBaruNama: namaInstrumenTerpilih,
+                    
+                    status: "PENDING",
+                    waktuDiajukan: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                pesan.className = "pesan info";
+                pesan.textContent = `Permintaan berhasil diajukan!\nDari: ${namaInstrumenLamaPengguna} → ${namaInstrumenTerpilih}`;
+                pesan.style.display = "block";
+
+                setTimeout(()=> { pesan.style.display = "none"; }, 6000);
+
+            } catch (err) {
+                pesan.style.display = "block";
+
+                if (err.code === "permission-denied") {
+                    pesan.className = "pesan error";
+                    pesan.textContent = "Masih ada permintaan yang belum dikonfirmasi! Tunggu sampai disetujui/ditolak.";
+                } else {
+                    pesan.className = "pesan error";
+                    pesan.textContent = "Gagal: " + err.message;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

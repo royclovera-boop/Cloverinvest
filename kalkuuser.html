@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KalkuUser — CLOVERAAP</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0F1729 0%, #1A2744 50%, #0F1729 100%);
+      color: #FFF9E8;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 460px;
+      margin: 0 auto;
+    }
+
+    .kartu {
+      background: transparent; /* ✅ Menyatu dengan latar belakang */
+      padding: 28px 0;
+      border-radius: 0;
+      box-shadow: none;
+      margin-bottom: 25px;
+      border: none; /* ✅ Hapus semua garis */
+    }
+
+    h1 {
+      text-align: left;
+      margin: 0 0 5px;
+      color: #FFD700;
+      font-size: 26px;
+      font-weight: 800;
+      text-shadow: 0 2px 4px rgba(184, 134, 11, 0.3);
+    }
+
+    .subtitle {
+      text-align: left;
+      color: #DAA520;
+      margin: 0 0 25px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .pemisah {
+      text-align: center;
+      margin: 30px 0;
+      position: relative;
+    }
+
+    .pemisah span {
+      background: transparent;
+      padding: 6px 20px;
+      color: #FFD700;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 0;
+      box-shadow: none;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+      padding-bottom: 8px;
+    }
+
+    .label-clvc {
+      background: transparent;
+      color: #FFD700;
+      font-weight: bold;
+      font-size: 15px;
+      padding: 10px 0;
+      border-radius: 0;
+      margin-bottom: 20px;
+      text-align: left;
+      box-shadow: none;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      margin-bottom: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: #FFD700;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255, 253, 244, 0.1);
+      color: #FFD700;
+      font-size: 16px;
+      font-weight: 600;
+      outline: none;
+      transition: all 0.3s ease;
+      box-shadow: none;
+    }
+
+    input:focus {
+      background: rgba(255, 253, 244, 0.15);
+      box-shadow: 0 0 0 2px rgba(218, 165, 32, 0.25);
+    }
+
+    .hasil {
+      margin-top: 22px;
+      padding: 20px 0;
+      background: transparent;
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+    }
+
+    .baris {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      padding: 14px 0;
+      border-bottom: none;
+    }
+
+    .baris:last-child {
+      border-bottom: none;
+    }
+
+    .baris span:first-child {
+      color: #FFE48D;
+      font-weight: 500;
+    }
+
+    .nilai {
+      font-weight: 800;
+      text-align: right;
+      font-size: 17px;
+    }
+
+    .biru { color: #64B5F6; }
+    .hijau { color: #66BB6A; }
+    .merah { color: #EF5350; }
+    .orange { color: #FFB74D; }
+    .emas { color: #FFD700; }
+
+    button {
+      width: 100%;
+      margin-top: 22px;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255, 215, 0, 0.1);
+      color: #FFD700;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: none;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: rgba(255, 215, 0, 0.18);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .btn-reset-clvc {
+      background: rgba(255, 215, 0, 0.08);
+      color: #FFD700;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="kartu">
+    <h1>KalkuUser</h1>
+    <div class="subtitle">Instrumen: XAU/USD · BTC/USD · AUD/USD</div>
+
+    <label>Modal User ($)</label>
+    <input type="number" id="modalUser" placeholder="Contoh: 200" step="0.01" oninput="hitungUtama()">
+
+    <label>Semua Modal yang Dikelola Manager ($)</label>
+    <input type="number" id="modalAkun" placeholder="Contoh: 1000" step="0.01" oninput="hitungUtama()">
+
+    <label>Total PnL / Profit ($)</label>
+    <input type="number" id="profitAkun" placeholder="Contoh: 100" step="0.01" oninput="hitungUtama()">
+
+    <div class="hasil">
+      <div class="baris">
+        <span>Persentase Saham User</span>
+        <span class="nilai biru" id="persentase">0.00%</span>
+      </div>
+      <div class="baris">
+        <span>Profit Kotor User</span>
+        <span class="nilai hijau" id="profitUser">$0.00</span>
+      </div>
+      <div class="baris">
+        <span>Fee Manager (30%)</span>
+        <span class="nilai orange" id="feeManager">$0.00</span>
+      </div>
+      <div class="baris">
+        <span>Profit Bersih User</span>
+        <span class="nilai hijau" id="profitBersih">$0.00</span>
+      </div>
+    </div>
+
+    <button onclick="resetUtama()">RESET</button>
+  </div>
+
+  <div class="pemisah"><span>INSTRUMEN KHUSUS — CLVC01</span></div>
+
+  <div class="kartu">
+    <div class="label-clvc">CLVC01 — Instrumen Utama</div>
+
+    <label>Modal User ($)</label>
+    <input type="number" id="modalUserCLVC" placeholder="Contoh: 10" step="0.01" oninput="hitungCLVC()">
+
+    <label>Modal yang Dikelola Manager Investasi ($)</label>
+    <input type="number" id="modalManagerCLVC" placeholder="Contoh: 2000" step="0.01" oninput="hitungCLVC()">
+
+    <label>PnL / Profit ($)</label>
+    <input type="number" id="pnlCLVC" placeholder="Contoh: 54" step="0.01" oninput="hitungCLVC()">
+
+    <div class="hasil">
+      <div class="baris">
+        <span>Keuntungan User</span>
+        <span class="nilai emas" id="hasilCLVC">$0.00</span>
+      </div>
+    </div>
+
+    <button class="btn-reset-clvc" onclick="resetCLVC()">RESET CLVC01</button>
+  </div>
+
+</div>
+
+<script>
+function dollar(angka) {
+  const nilai = Number(angka || 0);
+  const absolut = Math.abs(nilai).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+  return nilai < 0 ? "-$" + absolut : "$" + absolut;
+}
+
+function hitungUtama() {
+  const modalUser = parseFloat(document.getElementById("modalUser").value) || 0;
+  const modalAkun = parseFloat(document.getElementById("modalAkun").value) || 0;
+  const profitAkun = parseFloat(document.getElementById("profitAkun").value) || 0;
+
+  const persentase = modalAkun > 0 ? modalUser / modalAkun : 0;
+  const profitUser = persentase * profitAkun;
+  const feeManager = profitUser * 0.30;
+  const profitBersih = profitUser - feeManager;
+
+  document.getElementById("persentase").innerText = (persentase * 100).toFixed(2) + "%";
+  document.getElementById("profitUser").innerText = dollar(profitUser);
+  document.getElementById("feeManager").innerText = dollar(feeManager);
+  document.getElementById("profitBersih").innerText = dollar(profitBersih);
+}
+
+function resetUtama() {
+  document.getElementById("modalUser").value = "";
+  document.getElementById("modalAkun").value = "";
+  document.getElementById("profitAkun").value = "";
+  hitungUtama();
+}
+
+function hitungCLVC() {
+  const modalUser = parseFloat(document.getElementById("modalUserCLVC").value) || 0;
+  const modalManager = parseFloat(document.getElementById("modalManagerCLVC").value) || 0;
+  const pnl = parseFloat(document.getElementById("pnlCLVC").value) || 0;
+
+  const hasil = modalManager > 0 
+    ? (modalUser / modalManager) * pnl
+    : 0;
+
+  document.getElementById("hasilCLVC").innerText = dollar(hasil);
+}
+
+function resetCLVC() {
+  document.getElementById("modalUserCLVC").value = "";
+  document.getElementById("modalManagerCLVC").value = "";
+  document.getElementById("pnlCLVC").value = "";
+  hitungCLVC();
+}
+</script>
+
+</body>
+</html>

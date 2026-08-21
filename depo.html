@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit — CLOVERA UNION</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif;}
+        body {
+            background: linear-gradient(135deg, #05070E, #0F1424);
+            min-height:100vh;
+            padding:12px; position:relative;
+        }
+        body::before {
+            content:""; position:fixed; inset:0;
+            background:rgba(5,7,14,0.6); z-index:-1;
+        }
+
+        .container {max-width:420px; margin:0 auto;}
+
+        .kartu-utama {
+            background:transparent;
+            border-radius:18px; border:none;
+            box-shadow:none;
+            overflow:hidden;
+        }
+        .header {
+            /* ✅ LATAR SAMA DENGAN LATAR BELAKANG */
+            background:transparent;
+            padding:16px; 
+            color:#fff;
+            border-radius:16px;
+            /* ✅ TEKS KE KIRI */
+            text-align:left;
+        }
+        .header h1 {font-size:18px; margin-bottom:4px; color:#FFD700;}
+        .header p {font-size:13px; opacity:0.9; color:#FFF;}
+        .isi {padding:16px;}
+
+        .peringatan-pending {
+            background:rgba(255,243,205,0.1);
+            border:none; border-radius:12px;
+            padding:14px; margin-bottom:16px; text-align:center;
+        }
+        .peringatan-pending h3 {color:#FFD700; font-size:15px; margin-bottom:6px;}
+        .peringatan-pending p {color:#FFE066; font-size:13px;}
+
+        .pilihan {margin-bottom:18px;}
+        .label-pilihan {font-size:14px; font-weight:700; color:#FFD700; margin-bottom:10px;}
+
+        .tombol-pilihan {
+            width:100%; padding:14px; margin-bottom:10px; border:none;
+            border-radius:12px; background:rgba(255,249,220,0.08); cursor:pointer; transition:all 0.25s;
+            text-align:left; font-size:15px; font-weight:600; color:#FFD700;
+        }
+        .tombol-pilihan:disabled {opacity:0.5; cursor:not-allowed;}
+        .tombol-pilihan:hover:not(:disabled), .tombol-pilihan.terpilih {
+            background:rgba(255,233,140,0.15);
+            transform:scale(1.01);
+        }
+        .tombol-pilihan span {display:block; font-size:12px; font-weight:normal; color:#FFE066; margin-top:2px;}
+
+        .garis-pemisah {
+            text-align:center; margin:16px 0; position:relative;
+        }
+        .garis-pemisah::before, .garis-pemisah::after {
+            display:none;
+        }
+        .garis-pemisah b {background:transparent; padding:0 10px; color:#B8860B; font-size:13px;}
+
+        .kotak-rekening {
+            background:rgba(212,255,184,0.08);
+            border:none; border-radius:12px; padding:14px; margin-bottom:14px;
+        }
+        .kotak-rekening h3 {font-size:14px; color:#90EE90; margin-bottom:10px; text-align:center;}
+        .baris-data {display:flex; justify-content:space-between; padding:6px 0; border-bottom:none;}
+        .baris-data:last-child {border-bottom:none;}
+        .kunci {font-size:13px; color:#B2DFDB; font-weight:500;}
+        .nilai {font-size:13px; color:#FFF; font-weight:700; text-align:right;}
+
+        .form-input {margin-top:10px;}
+        .form-input label {font-size:13px; font-weight:600; color:#FFD700; display:block; margin-bottom:4px;}
+        .form-input input {
+            width:100%; padding:10px 12px; margin-bottom:10px;
+            border:none; border-radius:8px;
+            background:rgba(255,253,244,0.08); font-size:14px; color:#FFD700;
+        }
+        .form-input input[readonly] {background:rgba(245,240,220,0.1); cursor:not-allowed; color:#FFE066;}
+
+        .tombol-kirim {
+            width:100%; padding:13px; border:none; border-radius:10px;
+            background:linear-gradient(135deg, #32CD32, #228B22);
+            color:#fff; font-size:15px; font-weight:700; cursor:pointer;
+            margin-top:6px; transition:0.2s;
+        }
+        .tombol-kirim:disabled {opacity:0.5; cursor:not-allowed;}
+        .tombol-kirim:hover:not(:disabled) {opacity:0.92;}
+        .tombol-kirim:active:not(:disabled) {transform:scale(0.97);}
+
+        .tombol-kembali {
+            width:100%; padding:11px; border:none; border-radius:10px;
+            background:transparent; color:#B8860B; font-size:14px; font-weight:600;
+            cursor:pointer; margin-top:10px; transition:0.2s;
+        }
+        .tombol-kembali:hover {background:rgba(255,243,184,0.1);}
+
+        .peringatan {
+            background:rgba(255,193,7,0.1); border-left:none;
+            padding:10px; border-radius:6px; font-size:12px; color:#FFE066;
+            margin-bottom:14px; line-height:1.6;
+        }
+        .sembunyi {display:none !important;}
+        .loading {text-align:center; padding:40px; color:#FFD700; font-size:16px;}
+        .pesan-error {color:#EF5350; background:rgba(255,235,238,0.1); padding:10px; border-radius:6px; margin-top:10px; display:none;}
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="bagianMemuat" class="loading">Memverifikasi akun...</div>
+
+        <div id="bagianUtama" class="sembunyi">
+            <div class="kartu-utama">
+                <div class="header">
+                    <h1> DEPOSIT DANA</h1>
+                    <p>Pilih cara isi saldo akun Anda</p>
+                </div>
+                <div class="isi">
+
+                    <div id="kotakPeringatan" class="peringatan-pending sembunyi">
+                        <h3>⏳ MENUNGGU VERIFIKASI</h3>
+                        <p>Anda memiliki permintaan deposit yang belum dikonfirmasi.<br>Silakan tunggu sebelum mengajukan deposit baru.</p>
+                    </div>
+
+                    <div class="pilihan">
+                        <p class="label-pilihan">Pilih Metode Deposit:</p>
+
+                        <button class="tombol-pilihan" id="btnLynk" onclick="bukaLynk()">
+                            💳 Melalui LYNK
+                            <span id="statusLink">Memuat link...</span>
+                        </button>
+
+                        <div class="garis-pemisah"><b>ATAU</b></div>
+
+                        <button class="tombol-pilihan" id="btnTransfer" onclick="pilihTransfer()">
+                            🏦 Via Transfer Bank Manual
+                            <span>Transfer ke Rekening Resmi</span>
+                        </button>
+                    </div>
+
+                    <div id="bagianTransfer" class="sembunyi">
+                        <div class="kotak-rekening">
+                            <h3>🏦 REKENING TUJUAN</h3>
+                            <div class="baris-data">
+                                <span class="kunci">Owner</span>
+                                <span class="nilai" id="tujuanNama">— Memuat —</span>
+                            </div>
+                            <div class="baris-data">
+                                <span class="kunci">Nama Bank</span>
+                                <span class="nilai" id="tujuanBank">— Memuat —</span>
+                            </div>
+                            <div class="baris-data">
+                                <span class="kunci">No. Rekening</span>
+                                <span class="nilai" id="tujuanNoRek">— Memuat —</span>
+                            </div>
+                        </div>
+
+                        <div class="peringatan">
+                            ⚠️ <strong>WAJIB DIISI:</strong> Sebelum melakukan transfer, silakan isi data di bawah ini sesuai rekening pengirim.
+                        </div>
+
+                        <div class="form-input">
+                            <label>Nama Anda</label>
+                            <input type="text" id="namaAkun" readonly>
+
+                            <label>Email Anda</label>
+                            <input type="email" id="emailAkun" readonly>
+
+                            <label>Nama Pemilik Rekening Pengirim</label>
+                            <input type="text" id="namaRekeningAkun" placeholder="Contoh: Budi Santoso">
+
+                            <label>Nama Bank Pengirim</label>
+                            <input type="text" id="namaBankAkun" placeholder="Contoh: BCA / BRI / MANDIRI">
+
+                            <label>No. Rekening Pengirim</label>
+                            <input type="text" id="noRekeningAkun" placeholder="Nomor rekening pengirim">
+
+                            <label>Jumlah Deposit (Rp)</label>
+                            <input type="number" id="jumlahDeposit" placeholder="Contoh: 100000" min="1000">
+
+                            <button class="tombol-kirim" id="btnKirim" onclick="kirimBukti()">SAYA SUDAH TRANSFER</button>
+                            <div id="pesanError" class="pesan-error"></div>
+                        </div>
+                    </div>
+
+                    <button class="tombol-kembali" onclick="window.location.href='dasbor.html'">← Kembali ke Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let uidPengguna = null;
+        let emailPengguna = null;
+        let linkPembayaran = "";
+        let dataTujuan = { nama: "ROY SAPUTRA", bank: "MANDIRI", noRekening: "1460020842717" };
+        let adaPending = false;
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                alert("🔐 Silakan Login Terlebih Dahulu!");
+                window.location.href = "Login.html";
+                return;
+            }
+
+            uidPengguna = user.uid;
+            emailPengguna = user.email;
+            const nama = user.displayName || (user.email || "").split('@')[0];
+            document.getElementById("namaAkun").value = nama;
+            document.getElementById("emailAkun").value = user.email || "";
+
+            try {
+                const snapDeposit = await db.collection("deposit").doc(uidPengguna).get();
+                adaPending = snapDeposit.exists && snapDeposit.data().status === "PENDING";
+
+                if (adaPending) {
+                    document.getElementById("kotakPeringatan").classList.remove("sembunyi");
+                    document.getElementById("btnLynk").disabled = true;
+                    document.getElementById("btnTransfer").disabled = true;
+                }
+
+                const snapTujuan = await db.collection("onwer").doc("data").get();
+                if (snapTujuan.exists) {
+                    const d = snapTujuan.data();
+                    dataTujuan.nama = d.nama || "ROY SAPUTRA";
+                    dataTujuan.bank = d.bank || "MANDIRI";
+                    dataTujuan.noRekening = d.noRekening || "1460020842717";
+                }
+
+                document.getElementById("tujuanNama").textContent = dataTujuan.nama;
+                document.getElementById("tujuanBank").textContent = dataTujuan.bank;
+                document.getElementById("tujuanNoRek").textContent = dataTujuan.noRekening;
+
+                const snapLink = await db.collection("onwer").doc("link").get();
+                if (snapLink.exists) {
+                    linkPembayaran = snapLink.data().url || "";
+                    document.getElementById("statusLink").textContent = adaPending ? "Terkunci — Menunggu verifikasi" : "Klik untuk buka LYNK";
+                } else {
+                    document.getElementById("statusLink").textContent = "Link belum tersedia";
+                }
+
+            } catch (err) {
+                console.error("❌ Gagal memuat data:", err);
+                document.getElementById("tujuanNama").textContent = dataTujuan.nama;
+                document.getElementById("tujuanBank").textContent = dataTujuan.bank;
+                document.getElementById("tujuanNoRek").textContent = dataTujuan.noRekening;
+            }
+
+            document.getElementById("bagianMemuat").classList.add("sembunyi");
+            document.getElementById("bagianUtama").classList.remove("sembunyi");
+        });
+
+        function bukaLynk() {
+            if (adaPending) {
+                alert("⏳ Anda masih memiliki deposit yang belum dikonfirmasi!\nSilakan tunggu Admin memverifikasi terlebih dahulu.");
+                return;
+            }
+            if (!linkPembayaran) {
+                alert("⚠️ Link Pembayaran belum tersedia!");
+                return;
+            }
+            window.open(linkPembayaran, '_blank');
+        }
+
+        function pilihTransfer() {
+            if (adaPending) {
+                alert("⏳ Anda masih memiliki deposit yang belum dikonfirmasi!\nSilakan tunggu Admin memverifikasi terlebih dahulu.");
+                return;
+            }
+            document.getElementById("bagianTransfer").classList.remove("sembunyi");
+            document.getElementById("btnTransfer").classList.add("terpilih");
+        }
+
+        async function kirimBukti() {
+            const pesanError = document.getElementById("pesanError");
+            pesanError.style.display = "none";
+
+            if (adaPending) {
+                pesanError.textContent = "⏳ Masih ada deposit yang belum dikonfirmasi! Tunggu sampai disetujui/ditolak.";
+                pesanError.style.display = "block";
+                return;
+            }
+
+            const namaAkun = document.getElementById("namaAkun").value.trim();
+            const namaRekeningAkun = document.getElementById("namaRekeningAkun").value.trim();
+            const namaBankAkun = document.getElementById("namaBankAkun").value.trim();
+            const noRekeningAkun = document.getElementById("noRekeningAkun").value.trim();
+            const jumlahDeposit = parseFloat(document.getElementById("jumlahDeposit").value);
+
+            if (!namaRekeningAkun || !namaBankAkun || !noRekeningAkun || !jumlahDeposit) {
+                pesanError.textContent = "⚠️ Lengkapi semua data!";
+                pesanError.style.display = "block";
+                return;
+            }
+
+            if (jumlahDeposit < 1000) {
+                pesanError.textContent = "⚠️ Minimal Rp 1.000";
+                pesanError.style.display = "block";
+                return;
+            }
+
+            if (confirm(`Saya sudah transfer\n\nJumlah: Rp ${jumlahDeposit.toLocaleString('id-ID')}\n\nData akan diverifikasi Admin.`)) {
+                try {
+                    await db.collection("deposit").doc(uidPengguna).set({
+                        uidPengguna: uidPengguna,
+                        emailPengguna: emailPengguna,
+                        namaAkun: namaAkun,
+                        namaRekeningAkun: namaRekeningAkun,
+                        namaBankAkun: namaBankAkun,
+                        noRekeningAkun: noRekeningAkun,
+                        jumlahRupiah: jumlahDeposit,
+                        namaTujuan: dataTujuan.nama,
+                        bankTujuan: dataTujuan.bank,
+                        noRekeningTujuan: dataTujuan.noRekening,
+                        status: "PENDING",
+                        waktuDiajukan: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    alert("✅ Berhasil Dikirim!\n\nSilakan tunggu verifikasi Admin.");
+                    window.location.reload();
+
+                } catch (err) {
+                    console.error("Firestore Error:", err);
+                    pesanError.style.display = "block";
+
+                    if (err.code === "permission-denied") {
+                        pesanError.textContent = "⏳ Masih ada permintaan yang belum dikonfirmasi! Tunggu sampai disetujui/ditolak.";
+                    } else {
+                        pesanError.textContent = "❌ Gagal: " + (err.message || "Izin ditolak");
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tentang Kami — CLOVERAAP</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #0F1729 0%, #1A2744 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            line-height: 1.8;
+            color: #FFFFFF;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        /* ✅ HEADER — TRANSPARAN, TEKS PUTIH RATA KIRI */
+        .header {
+            background: transparent;
+            padding: 0 0 30px 0;
+            border-radius: 0;
+            margin-bottom: 30px;
+            box-shadow: none;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        .header h1 {
+            font-size: 28px;
+            color: #FFFFFF;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .header p {
+            font-size: 15px;
+            color: #FFD700;
+            font-weight: 500;
+        }
+        .kartu {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 30px;
+            border-radius: 14px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(218, 165, 32, 0.25);
+            backdrop-filter: blur(10px);
+        }
+        .kartu h2 {
+            font-size: 19px;
+            color: #FFD700;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+        }
+        .kartu p {
+            font-size: 15px;
+            color: #E8E8E8;
+            margin-bottom: 14px;
+            text-align: justify;
+        }
+        .sorot {
+            color: #FFD700;
+            font-weight: 600;
+        }
+        .kotak-instrumen {
+            background: rgba(218, 165, 32, 0.12);
+            border-left: 4px solid #FFD700;
+            padding: 18px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+        .instrumen-judul {
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .baris-bagi {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 10px 0;
+        }
+        .bagi {
+            flex: 1;
+            min-width: 120px;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .bagi .nilai {
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFD700;
+        }
+        .bagi .label {
+            font-size: 13px;
+            color: #BBB;
+        }
+        .link-dokumen {
+            display: inline-block;
+            background: linear-gradient(135deg, #2196F3, #1565C0);
+            color: #fff !important;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .link-dokumen:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+        }
+        .link-dokumen:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .tanda-tangan {
+            text-align: right;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed rgba(255, 215, 0, 0.3);
+        }
+        .nama-pendiri {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 4px;
+        }
+        .jabatan {
+            font-size: 14px;
+            color: #AAA;
+        }
+        .catatan {
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid #4CAF50;
+            padding: 14px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #C8E6C9;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #fff;
+            font-size: 16px;
+        }
+        .pesan-error {
+            background: rgba(255, 68, 68, 0.15);
+            border-left: 4px solid #FF4444;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 14px;
+            color: #FFC8C8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="loading" id="loading">Memuat halaman...</div>
+
+    <div class="container" id="konten" style="display:none;">
+        <div class="header">
+            <h1>TENTANG CLOVERAAP</h1>
+            <p>— Dibangun pada 9 Agustus 2026 —</p>
+        </div>
+
+        <div class="kartu">
+            <h2>Salam Perkenalan</h2>
+            <p>
+                <span class="sorot">Saya adalah Roy Saputra</span>, Pendiri sekaligus Manager Investasi CLOVERAAP. Saya juga seorang Trader Sistem yang mengelola dan menjalankan strategi perdagangan secara terukur dan disiplin.
+            </p>
+            <p>
+                Aplikasi ini saya bangun dengan satu tujuan tulus: <span class="sorot">mengajak Anda — para Investor — untuk bekerja sama</span>. Saya ingin mengelola dana Anda dengan sebaik-baiknya, menerapkan manajemen risiko yang ketat serta pengendalian psikologi perdagangan yang matang, demi pertumbuhan kekayaan bersama secara berkelanjutan.
+            </p>
+        </div>
+
+        <div class="kartu">
+            <h2>Empat Instrumen Perdagangan</h2>
+            <p>
+                Saya menjalankan sistem perdagangan pada <span class="sorot">4 Instrumen sekaligus</span>, yang terbagi menjadi dua kelompok dengan karakteristik dan pembagian keuntungan yang berbeda: setiap grafik data dan keuntungan akan terupdate 1 Minggu sekali tepat nya pada tanggal 7,14,21,28,30, paling cepat 1-3 hari
+                
+                ( deposit/withdraw ) akan dikonfirmasi masuk setiap tanggal 1 diawal bulan,
+                
+                contoh instrumen sebagai berikut :
+            </p>
+
+            <div class="kotak-instrumen">
+                <div class="instrumen-judul">CLVC01 — Instrumen Utama</div>
+                <p>
+                    CLVC01 adalah instrumen buatan saya sendiri. Ia adalah <span class="sorot">Ibu dari ketiga instrumen lainnya</span>. Data dan perhitungannya saya susun berdasarkan perjalanan ekonomi nyata yang saya alami dan catat secara langsung.
+                </p>
+                <p>
+                    <strong>Karakteristik:</strong> Risiko sangat terjaga, keuntungan stabil dan kecil. <br>
+                    <span class="sorot">Potensi 
+                    pnl : 1% — 2% per periode dari modal. Disclaimer khusus CLVC01: P/L tidak 100% ditentukan dari naik turunnya grafik, melainkan dari P/L dengan risiko 1-2% dari modal investor. Cocok untuk menabung, bukan bagian trading high risk.</span>
+                </p>
+            </div>
+
+            <div class="kotak-instrumen">
+                <div class="instrumen-judul">Tiga Instrumen Pasar Global</div>
+                <p>XAU/USD (Emas) · BTC/USD (Bitcoin) · AUD/USD (Dolar Australia)</p>
+                <p>
+                    Ketiga instrumen ini dikelola dengan sistem kemitraan investasi yang transparan dan adil.
+                </p>
+                <div class="baris-bagi">
+                    <div class="bagi">
+                        <div class="nilai">70%</div>
+                        <div class="label">Keuntungan<br>Investor</div>
+                    </div>
+                    <div class="bagi">
+                        <div class="nilai">30%</div>
+                        <div class="label">Keuntungan<br>Manager</div>
+                    </div>
+                </div>
+                <p style="margin-top:12px; font-size:14px; color:#CCC;">
+                    Pembagian keuntungan dihitung dari keuntungan bersih setiap bulan. Pembuatan grafik pada setiap instrumen bukanlah grafik dari pasar global, melainkan grafik kinerja akun Manager Investasi di setiap instrumen. Kenaikan/penurunan dihitung berdasarkan P/L akun instrumen.
+                </p>
+            </div>
+        </div>
+
+        <div class="kartu">
+            <h2>Bukti Kinerja & Transparansi</h2>
+            <p>
+                Untuk meyakinkan Anda sebelum bekerja sama, saya lampirkan catatan kinerja perdagangan saya yang telah diuji melalui sistem Backtest dan terverifikasi di platform TraderFamily.
+            </p>
+            <a id="tautanLaporan" class="link-dokumen" onclick="bukaLink()">
+                Lihat Laporan Performa Trading →
+            </a>
+            <div id="pesanLink" class="pesan-error" style="display:none;"></div>
+            <div class="catatan">
+                <strong>Catatan Penting:</strong> Anda juga dapat berinvestasi langsung melalui platform tersebut sesuai kebijakan mereka. Namun perlu dipahami, investasi di sana <strong>bukan saya yang mengelola</strong>, dan sistem bagi hasilnya mengikuti ketentuan platform tersebut secara terpisah.
+            </div>
+        </div>
+
+        <div class="kartu">
+            <h2>Mari Bangun Masa Depan Bersama</h2>
+            <p>
+                Dengan segala kesiapan sistem, manajemen risiko, dan rekam jejak yang saya miliki, saya — Roy Saputra — dengan senang hati mengundang Anda untuk bergabung dan <span class="sorot">bekerja sama membangun pertumbuhan kekayaan yang aman dan berkelanjutan</span> bersama CLOVERAAP.
+            </p>
+
+            <div class="tanda-tangan">
+                <div class="nama-pendiri">Roy Saputra</div>
+                <div class="jabatan">Pendiri & Manager Investasi — CLOVERAAP</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === KONFIGURASI FIREBASE ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let linkLaporan = "";
+
+        // === WAJIB LOGIN DULU ===
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = "Login.html";
+                return;
+            }
+
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("konten").style.display = "block";
+
+            try {
+                const snap = await db.doc("onwer/Link3").get();
+                if (snap.exists && snap.data().url) {
+                    linkLaporan = snap.data().url;
+                } else {
+                    document.getElementById("pesanLink").style.display = "block";
+                    document.getElementById("pesanLink").textContent = "Link laporan belum tersedia.";
+                }
+            } catch (err) {
+                document.getElementById("pesanLink").style.display = "block";
+                document.getElementById("pesanLink").textContent = "Gagal memuat link: " + err.message;
+            }
+        });
+
+        // === BUKA LINK JIKA ADA ===
+        function bukaLink() {
+            if (linkLaporan) {
+                window.open(linkLaporan, "_blank");
+            } else {
+                alert("Link belum tersedia.");
+            }
+        }
+    </script>
+</body>
+</html>

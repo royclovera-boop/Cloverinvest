@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Hubungi PT</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif;}
+        html,body {height:100%; overflow:hidden;}
+        /* ✅ LATAR BELAKANG BIRU GELAP */
+        body {
+            background: linear-gradient(135deg, #0A1628, #0F1F38);
+            display:flex; flex-direction:column;
+        }
+
+        .header {background:linear-gradient(90deg,#075E54,#128C7E); color:#fff; padding:12px 15px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;}
+        .info {display:flex; align-items:center; gap:10px;}
+        .foto {width:40px; height:40px; border-radius:50%; background:#FFD700; display:flex; align-items:center; justify-content:center; font-size:18px; color:#2C1A00; font-weight:bold;}
+        .judul h3 {font-size:15px;}
+        .judul p {font-size:11px; opacity:0.8;}
+        .tombol-tutup {background:rgba(255,60,60,0.25); border:none; color:#fff; padding:7px 10px; border-radius:6px; font-size:12px; cursor:pointer;}
+
+        /*  KARTU FORMULIR — SAMA DENGAN LATAR BELAKANG, TANPA GARIS */
+        .form-masuk {
+            background:transparent;
+            border:none;
+            border-radius:14px;
+            padding:24px;
+            max-width:420px;
+            margin:40px auto;
+        }
+        .form-masuk h2 {text-align:center; color:#FFD700; margin-bottom:20px;}
+        /* ✅ KOTAK INPUT — SAMA DENGAN LATAR BELAKANG, TANPA GARIS */
+        .form-masuk input {
+            width:100%;
+            padding:12px 16px;
+            margin:8px 0;
+            border:none;
+            border-radius:8px;
+            background:rgba(255,253,220,0.08);
+            font-size:15px;
+            color:#FFD700;
+        }
+        .form-masuk input::placeholder {color:#FFE066; opacity:0.7;}
+        .form-masuk button {width:100%; padding:13px; margin-top:10px; border:none; border-radius:8px; background:linear-gradient(180deg,#FFD700,#DAA520); color:#442F00; font-weight:bold; font-size:15px; cursor:pointer;}
+        .peringatan-gagal {color:#FF6B6B; text-align:center; margin-top:12px; font-size:13px; padding:8px; background:rgba(255,67,54,0.1); border-radius:6px; display:none;}
+
+        .area-pesan {flex:1; padding:12px; overflow-y:auto; background:linear-gradient(135deg, #0F1F38, #1A2E52);}
+        .balon {max-width:75%; padding:10px 14px; margin:6px 0; border-radius:8px; line-height:1.5;}
+        .balon.saya {background:rgba(76,175,80,0.2); color:#E8FFE8; margin-left:auto; border-radius:8px 8px 0 8px;}
+        .balon.them {background:rgba(255,255,255,0.08); color:#FFF; margin-right:auto; border-radius:8px 8px 8px 0;}
+        .info-pengirim {font-size:11px; color:#FFD700; margin-bottom:4px;}
+        .peringatan {text-align:center; padding:8px; background:rgba(255,215,0,0.1); color:#FFD700; font-size:13px; margin-bottom:10px; border-radius:6px;}
+        .kosong {text-align:center; padding:40px 20px; color:#99AADD;}
+
+        .baris-kirim {display:flex; gap:10px; padding:10px 12px; background:rgba(15,31,56,0.9); flex-shrink:0; border-top:none;}
+        .baris-kirim input {flex:1; padding:12px 16px; border:none; border-radius:24px; background:rgba(255,253,220,0.08); color:#FFD700; font-size:15px; outline:none;}
+        .baris-kirim input::placeholder {color:#FFE066; opacity:0.7;}
+        .tombol-kirim {width:44px; height:44px; border-radius:50%; border:none; background:linear-gradient(135deg,#25D366,#128C7E); color:#fff; font-size:20px; cursor:pointer;}
+        .tersembunyi {display:none !important;}
+        
+        p {color:#B0C4DE;}
+    </style>
+</head>
+<body>
+
+    <!-- FORM MASUK -->
+    <div id="halamanMasuk" class="form-masuk">
+        <h2> Mulai Chat</h2>
+        <input type="text" id="namaPengguna" placeholder="Nama Anda">
+        <input type="email" id="gmailPengguna" placeholder="Gmail Anda">
+        <button id="tombolMasuk" onclick="cekGmailTerdaftar()">Mulai Chat</button>
+        <p style="text-align:center; font-size:12px; color:#99AADD; margin-top:10px;">Hanya pengguna yang terdaftar yang bisa menghubungi Admin</p>
+        <p class="peringatan-gagal" id="pesanGagal"> Gmail ini belum terdaftar!</p>
+    </div>
+
+    <!-- AREA CHAT -->
+    <div id="halamanChat" class="tersembunyi" style="flex-direction:column; height:100%;">
+        <div class="header">
+            <div class="info">
+                <div class="foto"></div>
+                <div class="judul">
+                    <h3>PT. CLOVERA GROUP</h3>
+                    <p id="statusKoneksi">⏳ Menunggu Admin...</p>
+                </div>
+            </div>
+            <button class="tombol-tutup" id="tombolTutup" onclick="akhiriChat()">🗑️ Tutup</button>
+        </div>
+
+        <div class="area-pesan" id="areaPesan">
+            <div class="peringatan">💬 Terhubung selamanya sampai ditutup</div>
+            <p class="kosong">Silakan ketik pesan pertama Anda...</p>
+        </div>
+
+        <div class="baris-kirim">
+            <input type="text" id="inputPesan" placeholder="Ketik pesan..." autocomplete="off" onkeypress="if(event.key==='Enter')kirimPesan()">
+            <button class="tombol-kirim" id="tombolKirim" onclick="kirimPesan()">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // === KONEKSI FIREBASE ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const COLLECTION = "chetgpt";
+        const COL_CADANGAN = "cadangan";
+        const dokumenId = "pt-clovera-group";
+
+        let namaSaya, gmailSaya;
+        let terhubung = false;
+
+        async function cekGmailTerdaftar() {
+            namaSaya = document.getElementById("namaPengguna").value.trim();
+            gmailSaya = document.getElementById("gmailPengguna").value.trim().toLowerCase();
+            const pesanGagal = document.getElementById("pesanGagal");
+            pesanGagal.style.display = "none";
+
+            if (!namaSaya || !gmailSaya) {
+                alert("Isi Nama dan Gmail terlebih dahulu!");
+                return;
+            }
+
+            try {
+                const snapshot = await db.collection(COL_CADANGAN)
+                    .where("emailPengguna", "==", gmailSaya)
+                    .get();
+
+                if (snapshot.empty) {
+                    pesanGagal.style.display = "block";
+                    return;
+                }
+
+                const dataCadangan = snapshot.docs[0].data();
+                namaSaya = dataCadangan.nama || namaSaya;
+
+                console.log(" Gmail terdaftar — izin diberikan");
+                cekKetersediaanSesi();
+
+            } catch (err) {
+                alert(" Terjadi kesalahan: " + err.message);
+                console.error(err);
+            }
+        }
+
+        async function cekKetersediaanSesi() {
+            const doc = await db.collection(COLLECTION).doc(dokumenId).get();
+
+            if (doc.exists) {
+                const data = doc.data();
+
+                if (data.gmailPengguna && data.gmailPengguna !== gmailSaya) {
+                    alert(` SEDANG DIPAKAI ORANG LAIN!\n\nPengguna: ${data.namaPengguna}\n\nTunggu sampai selesai / ditutup dulu.`);
+                    return;
+                }
+
+                if (data.gmailPengguna === gmailSaya) {
+                    alert(" Masih dalam sesi — melanjutkan obrolan...");
+                    lanjutChat();
+                    return;
+                }
+            }
+
+            bukaSesiBaru();
+        }
+
+        async function bukaSesiBaru() {
+            await db.collection(COLLECTION).doc(dokumenId).set({
+                namaPengguna: namaSaya,
+                gmailPengguna: gmailSaya,
+                tujuanPT: "clovera-group",
+                status: "menunggu",
+                pesan: []
+            });
+
+            lanjutChat();
+        }
+
+        function lanjutChat() {
+            document.getElementById("halamanMasuk").classList.add("tersembunyi");
+            document.getElementById("halamanChat").classList.remove("tersembunyi");
+            document.getElementById("halamanChat").style.display = "flex";
+            mulaiPantau();
+        }
+
+        function mulaiPantau() {
+            db.collection(COLLECTION).doc(dokumenId).onSnapshot((doc) => {
+                if (!doc.exists) {
+                    kembaliKeAwal();
+                    return;
+                }
+
+                const data = doc.data();
+
+                if (data.gmailPengguna && data.gmailPengguna !== gmailSaya) {
+                    alert(`Sesi telah berakhir!\nPengguna baru: ${data.namaPengguna}`);
+                    kembaliKeAwal();
+                    return;
+                }
+
+                if (data.status === "terhubung" && !terhubung) {
+                    terhubung = true;
+                    document.getElementById("statusKoneksi").textContent = "● Terhubung";
+                }
+
+                if (data.pesan && Array.isArray(data.pesan)) {
+                    tampilkanPesan(data.pesan);
+                }
+            });
+        }
+
+        async function kirimPesan() {
+            const teks = document.getElementById("inputPesan").value.trim();
+            if (!teks) return;
+
+            try {
+                const ref = db.collection(COLLECTION).doc(dokumenId);
+                const doc = await ref.get();
+                const data = doc.data() || {};
+                const semuaPesan = data.pesan || [];
+
+                semuaPesan.push({
+                    dari: namaSaya,
+                    peran: "pengguna",
+                    teks: teks
+                });
+
+                await ref.update({ pesan: semuaPesan });
+                document.getElementById("inputPesan").value = "";
+            } catch (err) {
+                alert(" Gagal kirim pesan: " + err.message);
+                console.error(err);
+            }
+        }
+
+        function tampilkanPesan(semua) {
+            const area = document.getElementById("areaPesan");
+            let isi = `<div class="peringatan"> Terhubung selamanya sampai ditutup</div>`;
+
+            semua.forEach(p => {
+                const kelas = p.peran === "admin" ? "them" : "saya";
+                const namaPengirim = p.peran === "admin" ? " Admin" : " " + p.dari;
+                isi += `
+                    <div class="info-pengirim">${namaPengirim}</div>
+                    <div class="balon ${kelas}">${p.teks}</div>
+                `;
+            });
+
+            area.innerHTML = isi;
+            area.scrollTop = area.scrollHeight;
+        }
+
+        async function akhiriChat() {
+            if (confirm(" Tutup sesi? Pengguna lain baru bisa masuk setelah ini.")) {
+                await db.collection(COLLECTION).doc(dokumenId).delete();
+                kembaliKeAwal();
+            }
+        }
+
+        function kembaliKeAwal() {
+            document.getElementById("halamanChat").classList.add("tersembunyi");
+            document.getElementById("halamanMasuk").classList.remove("tersembunyi");
+            document.getElementById("namaPengguna").value = "";
+            document.getElementById("gmailPengguna").value = "";
+            terhubung = false;
+        }
+    </script>
+</body>
+</html>

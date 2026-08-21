@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — CLOVERAAP</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            /* ✅ LATAR BELAKANG GAMBAR TETAP TIDAK DIUBAH */
+            background: url('loginwall/login.png') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 15, 30, 0.55);
+            z-index: -1;
+        }
+
+        .kotak {
+            background: rgba(15, 23, 41, 0.75);
+            border-radius: 14px;
+            width: 100%;
+            max-width: 410px;
+            padding: 32px 26px;
+            backdrop-filter: blur(10px);
+        }
+
+        h2 {
+            text-align: left;
+            color: #FFFFFF;
+            margin-bottom: 26px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tombol-login {
+            background: rgba(255, 215, 0, 0.15);
+            color: #FFD700;
+            margin-bottom: 12px;
+        }
+
+        .tombol-login:hover {
+            background: rgba(255, 215, 0, 0.25);
+        }
+
+        .tombol-buat {
+            background: rgba(255, 255, 255, 0.06);
+            color: #E5E5E5;
+            margin-bottom: 12px;
+        }
+
+        .tombol-buat:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .tombol-bantuan {
+            background: transparent;
+            color: #94A3B8;
+            font-size: 14px;
+            padding: 10px;
+        }
+
+        .tombol-bantuan:hover {
+            color: #FFFFFF;
+        }
+
+        .form-isi {
+            margin-top: 22px;
+            display: none;
+        }
+
+        .form-isi.tampil {
+            display: block;
+        }
+
+        label {
+            display: block;
+            margin: 12px 0 6px;
+            color: #D4D4D4;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 11px 14px;
+            border: none;
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #FFFFFF;
+            font-size: 15px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input::placeholder {
+            color: #777;
+        }
+
+        input:focus {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.15);
+        }
+
+        .pesan {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 14px;
+            color: #FCA5A5;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="kotak">
+        <h2>Login</h2>
+
+        <button class="tombol-login" id="btnLogin">Login</button>
+        <button class="tombol-buat" onclick="window.location.href='register.html'">Buat Akun</button>
+        <button class="tombol-bantuan" onclick="window.location.href='help.html'">Bantuan</button>
+
+        <div class="form-isi" id="formIsi">
+            <label for="email">Gmail</label>
+            <input type="email" id="email" placeholder="Masukkan email">
+
+            <label for="sandi">Password</label>
+            <input type="password" id="sandi" placeholder="Masukkan kata sandi">
+
+            <button class="tombol-login" style="margin-top:18px" onclick="masukDasbor()">Masuk</button>
+            <div class="pesan" id="pesan"></div>
+        </div>
+    </div>
+
+    <script>
+        // === KONFIGURASI FIREBASE ===
+        const firebaseConfig = {
+          apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+          authDomain: "CLOVERA-ID.firebaseapp.com",
+          projectId: "CLOVERA-ID"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        const btnLogin = document.getElementById("btnLogin");
+        const formIsi = document.getElementById("formIsi");
+        const pesanEl = document.getElementById("pesan");
+
+        btnLogin.onclick = function () {
+            btnLogin.style.display = "none";
+            formIsi.classList.add("tampil");
+        };
+
+        function masukDasbor() {
+            let email = document.getElementById("email").value;
+            let sandi = document.getElementById("sandi").value;
+            pesanEl.textContent = "";
+
+            if (!email || !sandi) {
+                pesanEl.textContent = "Isi email dan password dulu!";
+                return;
+            }
+
+            auth.signInWithEmailAndPassword(email, sandi)
+                .then((userCredential) => {
+                    window.location.href = "dasbor.html";
+                })
+                .catch((error) => {
+                    pesanEl.textContent = error.message;
+                });
+        }
+    </script>
+
+</body>
+</html>

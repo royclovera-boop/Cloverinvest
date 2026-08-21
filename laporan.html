@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box;}
+        body {
+            background: url('loginwall/login.png') no-repeat center center fixed;
+            background-size: cover;
+            height:100vh; display:flex; align-items:center; justify-content:center;
+            position:relative;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        body::before {
+            content:""; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:-1;
+        }
+
+        .tombol-kembali {
+            position:fixed; top:12px; left:12px; width:40px; height:40px;
+            border-radius:50%; background:#B8860B; border:none; color:#fff;
+            font-size:18px; cursor:pointer;
+        }
+
+        .ikon {
+            width:110px; height:110px; cursor:pointer; transition:transform 0.2s;
+            display:none;
+        }
+        .ikon:active {transform:scale(0.93);}
+        .ikon img {width:100%; height:100%; object-fit:contain;}
+
+        .loading {color:#fff; font-size:15px;}
+    </style>
+</head>
+<body>
+
+    <button class="tombol-kembali" onclick="window.location.href='dasbor.html'">←</button>
+
+    <div class="ikon" id="ikonLaporan" onclick="bukaLaporan()">
+        <img src="loginwall/laporan.png" alt="">
+    </div>
+
+    <div class="ikon" id="ikonLaporan2" onclick="bukaLaporan2()">
+        <img src="loginwall/laporan2.png" alt="">
+    </div>
+
+    <div class="loading" id="loading">Memverifikasi...</div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let urlLaporan = "";
+        let urlLaporan2 = "";
+
+        auth.onAuthStateChanged(async (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            try {
+                const doc = await db.doc("onwer/laporan").get();
+                if (doc.exists && doc.data().url) {
+                    urlLaporan = doc.data().url;
+                    document.getElementById("loading").style.display = "none";
+                    document.getElementById("ikonLaporan").style.display = "block";
+                } else {
+                    document.getElementById("loading").textContent = "Data tidak ditemukan";
+                }
+
+                const doc2 = await db.doc("onwer/laporan2").get();
+                if (doc2.exists && doc2.data().url) {
+                    urlLaporan2 = doc2.data().url;
+                    document.getElementById("ikonLaporan2").style.display = "block";
+                }
+            } catch (e) {
+                document.getElementById("loading").textContent = "Gagal memuat";
+            }
+        });
+
+        function bukaLaporan() {
+            if (urlLaporan) window.open(urlLaporan, "_blank");
+        }
+
+        function bukaLaporan2() {
+            if (urlLaporan2) window.open(urlLaporan2, "_blank");
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penarikan Dana — CLOVERA UNION</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #05070E, #0F1424);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(5,7,14,0.6);
+            z-index: -1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .kartu-utama {
+            background: transparent;
+            border-radius: 20px;
+            box-shadow: none;
+            border: none;
+            overflow: hidden;
+        }
+
+        .header {
+            background: transparent;
+            padding: 24px 0;
+            color: #fff;
+            text-align: left;
+            border-radius: 0;
+            border-bottom: 1px solid rgba(255,215,0,0.15);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #FFFFFF;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: #FFD700;
+            opacity: 0.8;
+        }
+
+        .catatan-penting {
+            background: rgba(255,243,205,0.08);
+            border-left: none;
+            padding: 14px 16px;
+            margin: 16px 0;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #FFE066;
+            line-height: 1.6;
+        }
+
+        .isi {
+            padding: 0;
+        }
+
+        .bagian-judul {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFD700;
+            margin: 20px 0 12px;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .baris-data {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: none;
+            font-size: 14px;
+        }
+
+        .label-data {
+            font-weight: 600;
+            color: #FFE48D;
+        }
+
+        .nilai-data {
+            color: #FFF;
+            font-weight: 500;
+            text-align: right;
+            word-break: break-all;
+            max-width: 60%;
+        }
+
+        .kartu-saldo-tersedia {
+            background: rgba(200,255,176,0.08);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            border: none;
+            margin: 16px 0;
+        }
+
+        .label-saldo-tersedia {
+            font-size: 13px;
+            color: #90EE90;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .nilai-saldo {
+            font-size: 26px;
+            font-weight: 700;
+            color: #66BB6A;
+        }
+
+        .label-input {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #FFD700;
+            margin: 20px 0 8px;
+        }
+
+        .input-jumlah {
+            width: 100%;
+            padding: 14px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            background: rgba(255,253,244,0.08);
+            color: #FFD700;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-jumlah:focus {
+            outline: none;
+            background: rgba(255,253,244,0.12);
+            box-shadow: 0 0 0 4px rgba(218,165,32,0.15);
+        }
+
+        .keterangan-idr {
+            text-align: center;
+            font-size: 14px;
+            color: #FFE066;
+            margin-top: 8px;
+        }
+
+        .tombol-konfirmasi {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            background: linear-gradient(135deg, #1E293B, #334155);
+            color: #FFD700;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+            margin-top: 20px;
+            transition: all 0.25s ease;
+        }
+
+        .tombol-konfirmasi:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #293548, #3F4E67);
+        }
+
+        .tombol-konfirmasi:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+            background: #1A1A2E;
+            color: #777;
+            box-shadow: none;
+        }
+
+        .kotak-pesan {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+            text-align: center;
+            line-height: 1.7;
+        }
+
+        .berhasil {
+            background: rgba(232,245,233,0.1);
+            color: #66BB6A;
+            border: none;
+        }
+
+        .peringatan {
+            background: rgba(255,243,205,0.1);
+            color: #FFE066;
+            border: none;
+        }
+
+        .ditolak {
+            background: rgba(255,235,238,0.1);
+            color: #EF5350;
+            border: none;
+        }
+
+        .info-pending {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(255,243,205,0.08);
+            border-radius: 10px;
+            color: #FFD700;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .info-belum-verifikasi {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(239,83,80,0.1);
+            border-radius: 10px;
+            color: #EF5350;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #FFD700;
+            font-size: 16px;
+        }
+
+        .kembali {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            color: #DAA520;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="konten" style="display:none;">
+        <div class="kartu-utama">
+            <div class="header">
+                <h1>PENARIKAN DANA</h1>
+                <p>CLOVERA UNION — Ajukan Penarikan</p>
+            </div>
+
+            <div class="catatan-penting">
+                penting:<br>
+                Pastikan data anda sudah benar
+            </div>
+
+            <div id="infoBelumVerifikasi" class="info-belum-verifikasi" style="display:none;">
+                ⚠️ <strong>Belum Verifikasi</strong><br>
+                Lengkapi data verifikasi terlebih dahulu untuk dapat menarik dana.
+            </div>
+
+            <div id="infoPending" class="info-pending" style="display:none;">
+                ⏳ <strong>Status: PENDING</strong><br>
+                Penarikan sedang diproses, maksimal 1 × 24 jam kerja.
+            </div>
+
+            <div class="isi">
+                <div class="bagian-judul">DATA ANDA (Dari Verifikasi)</div>
+
+                <div class="baris-data">
+                    <span class="label-data">Nama Lengkap</span>
+                    <span class="nilai-data" id="namaUser">—</span>
+                </div>
+                <div class="baris-data">
+                    <span class="label-data">NIK</span>
+                    <span class="nilai-data" id="nikUser">—</span>
+                </div>
+                <div class="baris-data">
+                    <span class="label-data">Alamat KTP</span>
+                    <span class="nilai-data" id="alamatKtp">—</span>
+                </div>
+                <div class="baris-data">
+                    <span class="label-data">Alamat Gmail</span>
+                    <span class="nilai-data" id="gmailUser">—</span>
+                </div>
+                <div class="baris-data">
+                    <span class="label-data">Nama Bank</span>
+                    <span class="nilai-data" id="namaBank">—</span>
+                </div>
+                <div class="baris-data">
+                    <span class="label-data">Nomor Rekening</span>
+                    <span class="nilai-data" id="noRekening">—</span>
+                </div>
+                <div class="baris-data">
+                    <span class="label-data">Atas Nama</span>
+                    <span class="nilai-data" id="atasNama">—</span>
+                </div>
+
+                <div class="kartu-saldo-tersedia">
+                    <p class="label-saldo-tersedia">SALDO TERSEDIA</p>
+                    <p class="nilai-saldo" id="saldoTersedia">$ 0.00</p>
+                </div>
+
+                <label class="label-input">JUMLAH YANG INGIN DITARIK (USD)</label>
+                <input type="number" step="0.01" min="0.01" class="input-jumlah" id="jumlahTarik" placeholder="0.00" oninput="hitungKonversi()">
+                <p class="keterangan-idr" id="konversiIDR">= Rp 0</p>
+
+                <button id="btnKirim" class="tombol-konfirmasi" onclick="ajukanPenarikan()">KONFIRMASI PENARIKAN</button>
+
+                <div id="kotakPesan" class="kotak-pesan"></div>
+
+                <a href="dasbor.html" class="kembali">Kembali ke Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">Memuat data...</div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let uidPengguna = null;
+        let emailPengguna = "";
+        let namaPengguna = "";
+        let namaBankPengguna = "";
+        let noRekPengguna = "";
+        let atasNamaPengguna = "";
+        let kursUSD = 0;
+        let saldoPokok = 0;
+        let adaPending = false;
+        let sudahVerifikasi = false;
+
+        auth.onAuthStateChanged(async user => {
+            if (!user) {
+                window.location.href = "Login.html";
+                return;
+            }
+
+            uidPengguna = user.uid;
+            emailPengguna = user.email;
+            namaPengguna = user.displayName || (user.email || "").split('@')[0];
+
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("konten").style.display = "block";
+            document.getElementById("namaUser").textContent = namaPengguna;
+            document.getElementById("gmailUser").textContent = emailPengguna;
+
+            // === AMBIL DATA DARI DOKUMEN VERIFIKASI ===
+            await ambilDataVerifikasi();
+
+            db.doc("pengaturan/kurs").onSnapshot(snap => {
+                if (snap.exists) {
+                    kursUSD = snap.data().nilai || 0;
+                    hitungKonversi();
+                }
+            });
+
+            db.doc("pengguna/" + uidPengguna).onSnapshot(snap => {
+                if (snap.exists) {
+                    saldoPokok = snap.data().saldo || 0;
+                    document.getElementById("saldoTersedia").textContent = `$ ${saldoPokok.toFixed(2)}`;
+                    hitungKonversi();
+                }
+            });
+
+            cekStatusPenarikan();
+        });
+
+        // === FUNGSI AMBIL DATA DARI KOLEKSI VERIFIKASI ===
+        async function ambilDataVerifikasi() {
+            try {
+                const snap = await db.collection("verifikasi").doc(uidPengguna).get();
+                
+                if (!snap.exists) {
+                    // Belum ada data verifikasi
+                    sudahVerifikasi = false;
+                    document.getElementById("infoBelumVerifikasi").style.display = "block";
+                    document.getElementById("btnKirim").disabled = true;
+                    document.getElementById("btnKirim").textContent = "Lengkapi Verifikasi Dulu";
+                    return;
+                }
+
+                const data = snap.data();
+                const status = data.statusVerifikasi || "menunggu";
+
+                // Tampilkan data dari verifikasi
+                document.getElementById("namaUser").textContent = data.namaKtp || namaPengguna;
+                document.getElementById("nikUser").textContent = data.nik || "—";
+                document.getElementById("alamatKtp").textContent = data.alamatKtp || "—";
+                namaBankPengguna = data.namaBank || "—";
+                noRekPengguna = data.noRekening || "—";
+                atasNamaPengguna = data.atasNama || "—";
+
+                document.getElementById("namaBank").textContent = namaBankPengguna;
+                document.getElementById("noRekening").textContent = noRekPengguna;
+                document.getElementById("atasNama").textContent = atasNamaPengguna;
+
+                // Cek status verifikasi
+                if (status === "disetujui") {
+                    sudahVerifikasi = true;
+                    document.getElementById("infoBelumVerifikasi").style.display = "none";
+                } else if (status === "ditolak") {
+                    sudahVerifikasi = false;
+                    document.getElementById("infoBelumVerifikasi").style.display = "block";
+                    document.getElementById("infoBelumVerifikasi").innerHTML = "❌ <strong>Verifikasi Ditolak</strong><br>Silakan hubungi Admin untuk info lebih lanjut.";
+                    document.getElementById("btnKirim").disabled = true;
+                    document.getElementById("btnKirim").textContent = "Verifikasi Ditolak";
+                } else {
+                    // Menunggu
+                    sudahVerifikasi = false;
+                    document.getElementById("infoBelumVerifikasi").style.display = "block";
+                    document.getElementById("infoBelumVerifikasi").innerHTML = "⏳ <strong>Verifikasi Menunggu</strong><br>Silakan tunggu sampai disetujui Admin.";
+                    document.getElementById("btnKirim").disabled = true;
+                    document.getElementById("btnKirim").textContent = "Menunggu Verifikasi";
+                }
+
+            } catch (e) {
+                console.error("Ambil data verifikasi gagal:", e);
+                sudahVerifikasi = false;
+                document.getElementById("infoBelumVerifikasi").style.display = "block";
+            }
+        }
+
+        async function cekStatusPenarikan() {
+            try {
+                const snap = await db.collection("penarikan").doc(uidPengguna).get();
+                if (snap.exists) {
+                    const status = snap.data().status;
+                    if (status === "PENDING") {
+                        adaPending = true;
+                        document.getElementById("infoPending").style.display = "block";
+                        document.getElementById("btnKirim").disabled = true;
+                        document.getElementById("btnKirim").textContent = "masih ada penarikan diproses";
+                    } else {
+                        adaPending = false;
+                        document.getElementById("infoPending").style.display = "none";
+                        if (sudahVerifikasi) {
+                            document.getElementById("btnKirim").disabled = false;
+                            document.getElementById("btnKirim").textContent = "KONFIRMASI PENARIKAN";
+                        }
+                    }
+                } else {
+                    adaPending = false;
+                    document.getElementById("infoPending").style.display = "none";
+                    if (sudahVerifikasi) {
+                        document.getElementById("btnKirim").disabled = false;
+                        document.getElementById("btnKirim").textContent = "KONFIRMASI PENARIKAN";
+                    }
+                }
+            } catch (e) {
+                console.error("Cek status gagal:", e);
+            }
+        }
+
+        function hitungKonversi() {
+            const jumlah = parseFloat(document.getElementById("jumlahTarik").value) || 0;
+            const idr = jumlah * kursUSD;
+            document.getElementById("konversiIDR").textContent = `= Rp ${idr.toLocaleString('id-ID')}`;
+        }
+
+        async function ajukanPenarikan() {
+            const btn = document.getElementById("btnKirim");
+            const pesan = document.getElementById("kotakPesan");
+            const jumlahInput = parseFloat(document.getElementById("jumlahTarik").value) || 0;
+
+            pesan.style.display = "none";
+
+            if (!sudahVerifikasi) {
+                pesan.style.display = "block";
+                pesan.className = "kotak-pesan peringatan";
+                pesan.textContent = "Lengkapi verifikasi akun terlebih dahulu!";
+                return;
+            }
+
+            if (adaPending) {
+                pesan.style.display = "block";
+                pesan.className = "kotak-pesan peringatan";
+                pesan.innerHTML = "⚠️ Masih ada penarikan yang belum dikonfirmasi!<br>Penarikan sedang diproses, maksimal 1 × 24 jam kerja.";
+                return;
+            }
+
+            if (jumlahInput <= 0) {
+                pesan.style.display = "block";
+                pesan.className = "kotak-pesan peringatan";
+                pesan.textContent = "Masukkan jumlah penarikan!";
+                return;
+            }
+
+            if (jumlahInput > saldoPokok) {
+                pesan.style.display = "block";
+                pesan.className = "kotak-pesan peringatan";
+                pesan.textContent = `Saldo tidak cukup! Maksimal: $${saldoPokok.toFixed(2)}`;
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Sedang Diproses...";
+
+            try {
+                await db.collection("penarikan").doc(uidPengguna).set({
+                    uidPengguna: uidPengguna,
+                    emailPengguna: emailPengguna,
+                    nama: namaPengguna,
+                    namaBank: namaBankPengguna,
+                    noRekening: noRekPengguna,
+                    atasNama: atasNamaPengguna,
+                    jumlahUSD: jumlahInput,
+                    jumlahIDR: jumlahInput * kursUSD,
+                    kursSaatDiajukan: kursUSD,
+                    status: "PENDING",
+                    waktuDiajukan: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                pesan.style.display = "block";
+                pesan.className = "kotak-pesan berhasil";
+                pesan.innerHTML = `✅ Permintaan Penarikan Berhasil Diajukan!<br><br>Jumlah: $${jumlahInput.toFixed(2)}<br>Bank: ${namaBankPengguna}<br>a.n: ${atasNamaPengguna}<br>Status: <strong>PENDING</strong><br><br>⏳ Penarikan sedang diproses, maksimal 1 × 24 jam kerja.`;
+
+                document.getElementById("jumlahTarik").value = "";
+                cekStatusPenarikan();
+
+            } catch (error) {
+                pesan.style.display = "block";
+                pesan.className = "kotak-pesan ditolak";
+
+                if (error.code === "permission-denied") {
+                    pesan.innerHTML = "⚠️ Masih ada penarikan yang belum dikonfirmasi!<br>Penarikan sedang diproses, maksimal 1 × 24 jam kerja.";
+                    cekStatusPenarikan();
+                } else {
+                    pesan.textContent = "Gagal: " + (error.message || "Izin ditolak");
+                }
+
+            } finally {
+                if (!adaPending && sudahVerifikasi) {
+                    btn.disabled = false;
+                    btn.textContent = "KONFIRMASI PENARIKAN";
+                }
+            }
+        }
+    </script>
+</body>
+</html>
