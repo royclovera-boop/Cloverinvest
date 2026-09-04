@@ -7,112 +7,118 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
     <style>
         * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', sans-serif;}
-        body {
-            background: linear-gradient(135deg, #0F1729, #1A2744);
-            min-height:100vh; padding:12px;
-        }
-        .container {max-width:420px; margin:0 auto;}
-
-        /* ✅ HEADER — TRANSPARAN, TEKS PUTIH RATA KIRI */
-        .header {
-            background: transparent;
-            padding:16px 0; margin-bottom:14px;
-            text-align:left; border:none; box-shadow:none;
-        }
-        .header h1 {font-size:18px; color:#FFFFFF; margin-bottom:4px; font-weight:700;}
-        .header p {font-size:12px; color:#FFD700; opacity:0.9;}
-
-        /* ✅ KARTU SINYAL — HITAM GELAP, TANPA GARIS */
-        .kartu-sinyal {
-            background:#1E293B;
-            border-radius:14px; border:none;
-            padding:16px; margin-bottom:12px;
-            box-shadow:0 4px 16px rgba(0,0,0,0.3);
-            transition:all 0.3s ease;
-        }
-        /* ✅ Tampilan jika Sinyal TERTUTUP PROFIT */
-        .kartu-sinyal.profit {
-            background:#1A3328;
-            box-shadow:0 4px 16px rgba(34,197,94,0.2);
-        }
-        /* ✅ Tampilan jika Sinyal TERTUTUP LOSS */
-        .kartu-sinyal.loss {
-            background:#331A1A;
-            box-shadow:0 4px 16px rgba(239,68,68,0.2);
+        
+        /* ===== WARNA UTAMA ===== */
+        :root {
+            --latar-gelap: #0F172A;
+            --kartu-biru: #1E293B;
+            --tombol-aktif: #1E40AF;   /* Biru untuk Aktif */
+            --tombol-running: #F59E0B;  /* Kuning untuk Running */
+            --kartu-biru-terang: #27374D;
+            --batas-biru: #334155;
+            --hijau: #10B981;
+            --merah: #EF4444;
+            --kuning-emas: #FBBF24;
+            --putih: #F8FAFC;
+            --abu-lembut: #94A3B8;
         }
 
-        .baris {margin-bottom:12px;}
-        .label {font-size:12px; font-weight:700; color:#FFD700; margin-bottom:4px; text-transform:uppercase;}
-        .nilai {font-size:18px; font-weight:800; color:#FFFFFF;}
+        body {background: var(--latar-gelap); min-height:100vh; color: var(--putih);}
 
-        .kotak-jenis {
-            display:inline-block; padding:6px 16px; border-radius:20px;
-            font-size:15px; font-weight:800; color:#fff;
-        }
-        .buy {background:linear-gradient(90deg, #228B22, #32CD32);}
-        .sell {background:linear-gradient(90deg, #CC0000, #FF4444);}
+        /* ===== HEADER & TAB ===== */
+        .atas {background: var(--kartu-biru); padding:16px; border-bottom:1px solid var(--batas-biru);}
+        .judul {font-size:20px; font-weight:700; color: var(--kuning-emas); text-align:center; margin-bottom:16px;}
+        
+        .tab-container {display:flex; gap:8px; margin-bottom:12px;}
+        .tab {flex:1; text-align:center; padding:10px 8px; font-size:14px; font-weight:600; color: var(--abu-lembut); border-bottom:2px solid transparent; cursor:pointer;}
+        .tab.aktif {color: var(--hijau); border-bottom-color: var(--hijau);}
 
-        /* ✅ Label Status Hasil */
-        .label-hasil {
-            display:inline-block; padding:6px 16px; border-radius:20px;
-            font-size:14px; font-weight:800; color:#fff; margin-left:10px;
-        }
-        .hasil-profit {background:linear-gradient(90deg, #22C55E, #16A34A);}
-        .hasil-loss {background:linear-gradient(90deg, #EF4444, #DC2626);}
+        .filter-bar {padding:0 16px 12px; background: var(--kartu-biru);}
+        .filter-btn {width:100%; padding:10px 14px; background: var(--hijau); color:#fff; border:none; border-radius:6px; font-size:14px; font-weight:600; text-align:left; display:flex; justify-content:space-between; align-items:center;}
+        .filter-btn::after {content:"▼"; font-size:12px; opacity:.8;}
 
-        .grid-harga {display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px;}
-        .kotak-tp {background:#1E3D2F; padding:10px; border-radius:8px; border:none;}
-        .kotak-sl {background:#3D1E1E; padding:10px; border-radius:8px; border:none;}
-        .label-tp {font-size:11px; color:#86EFAC; font-weight:700;}
-        .label-sl {font-size:11px; color:#FCA5A5; font-weight:700;}
-        .nilai-tp {font-size:16px; font-weight:800; color:#FFFFFF; margin-top:2px;}
-        .nilai-sl {font-size:16px; font-weight:800; color:#FFFFFF; margin-top:2px;}
+        /* ===== KONTEN ===== */
+        .konten {padding:16px;}
+        .kosong {text-align:center; padding:60px 20px; color: var(--abu-lembut);}
+        .kosong p {font-size:14px; margin-top:4px; margin-bottom:20px;}
 
-        .kotak-pips {
-            background:linear-gradient(135deg, #44402C, #B8860B);
-            padding:12px; border-radius:10px; text-align:center; margin:10px 0;
-        }
-        .kartu-sinyal.profit .kotak-pips {
-            background:linear-gradient(135deg, #1E3D2F, #22C55E);
-        }
-        .kartu-sinyal.loss .kotak-pips {
-            background:linear-gradient(135deg, #3D1E1E, #EF4444);
-        }
-        .nilai-pips {font-size:22px; font-weight:800; color:#FFFFFF;}
-        .label-pips {font-size:12px; color:#FFE473; font-weight:600;}
+        /* === KARTU SINYAL — TETAP BIASA === */
+        .kartu {background: var(--kartu-biru); border-radius:12px; border:1px solid var(--batas-biru); padding:16px; margin-bottom:12px;}
+        .baris-atas {display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+        .pair {font-size:22px; font-weight:800; color: var(--kuning-emas);}
+        .id-sinyal {font-size:13px; color: var(--abu-lembut);}
+        
+        .info-baris {display:flex; justify-content:space-between; padding:6px 0; font-size:14px;}
+        .label {color: var(--abu-lembut);}
+        .nilai {font-weight:700; color: var(--putih);}
+        .pips-untung {color: var(--hijau); font-weight:bold; font-size:16px;}
+        .pips-rugi {color: var(--merah); font-weight:bold; font-size:16px;}
+        
+        .kotak-data {background: var(--kartu-biru-terang); border-radius:8px; padding:12px; margin:10px 0;}
+        .kotak-data .baris {display:flex; justify-content:space-between; padding:6px 0; font-size:15px;}
+        .kotak-data .label {color: #CBD5E1;}
+        .kotak-data .nilai {font-weight:700; color: var(--putih);}
 
-        .kotak-catatan {
-            background:rgba(255,255,255,0.08); padding:12px; border-radius:8px;
-            border:none; margin-top:8px;
-            font-size:13px; color:#E5E5E5; line-height:1.6;
-        }
-        .kartu-sinyal.profit .kotak-catatan {background:rgba(34,197,94,0.1);}
-        .kartu-sinyal.loss .kotak-catatan {background:rgba(239,68,68,0.1);}
+        /* === TOMBOL STATUS — HANYA INI YANG BERWARNA === */
+        .status-papan {padding:10px; border-radius:8px; font-weight:700; text-align:center; margin-top:10px; font-size:16px;}
+        .papan-aktif {background: var(--tombol-aktif); color:#fff;}
+        .papan-running {background: var(--tombol-running); color:#111;}
 
-        .waktu {font-size:11px; color:#94A3B8; text-align:right; margin-top:8px;}
-        .tidak-ada {text-align:center; padding:60px 20px; color:#94A3B8; font-size:14px;}
-        .loading {text-align:center; padding:60px 20px; color:#fff; font-size:15px;}
-        .btn-kembali {
-            display:block; text-align:center; margin-top:14px; padding:10px;
-            background:rgba(255,215,0,0.15); color:#FFD700;
-            border-radius:10px; text-decoration:none; font-size:14px; font-weight:600;
-        }
+        .status-badge {padding:8px 12px; border-radius:8px; font-weight:700; text-align:center; margin:10px 0; width:100%; font-size:16px;}
+        .expired {background: #475569; color: #E2E8F0;}
+        .profit {background: var(--hijau); color:#fff;}
+        .loss {background: var(--merah); color:#fff;}
+
+        .waktu-kecil {font-size:13px; color: var(--abu-lembut); margin-top:4px;}
+
+        /* === GRAFIK === */
+        .wadah-grafik {background: var(--kartu-biru); border-radius:12px; padding:16px; margin-bottom:12px; border:1px solid var(--batas-biru);}
+        .judul-grafik {font-size:15px; font-weight:700; color: var(--putih); margin-bottom:12px;}
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="header">
-            <h1>SINYAL TRADING</h1>
-            <p>Sinyal dari PT. CLOVERA GROUP</p>
+    <div class="atas">
+        <div class="judul">CLOVERA UNION</div>
+        <div class="tab-container">
+            <div class="tab" id="tabStat" onclick="gantiTab('statistik')">Statistik</div>
+            <div class="tab aktif" id="tabAktif" onclick="gantiTab('aktif')">Active Signal</div>
+            <div class="tab" id="tabRiwayat" onclick="gantiTab('riwayat')">History Signal</div>
         </div>
+    </div>
 
-        <div id="loading" class="loading">Memuat sinyal...</div>
-        <div id="daftarSinyal"></div>
-        <a href="javascript:history.back()" class="btn-kembali">KEMBALI</a>
+    <div class="filter-bar" id="filterAktif">
+        <button class="filter-btn">Filter Active Signal</button>
+    </div>
+    <div class="filter-bar" id="filterRiwayat" style="display:none;">
+        <button class="filter-btn">Filter History Signal</button>
+    </div>
+
+    <div class="konten" id="kontenStat" style="display:none;">
+        <div class="wadah-grafik">
+            <div class="judul-grafik">Performa Sinyal</div>
+            <div id="grafik"></div>
+        </div>
+        <div class="wadah-grafik">
+            <div class="judul-grafik">Ringkasan</div>
+            <div class="info-baris"><span class="label">Total Sinyal</span><span class="nilai" id="jmlTotal">0</span></div>
+            <div class="info-baris"><span class="label">Profit</span><span class="nilai pips-untung" id="jmlProfit">0</span></div>
+            <div class="info-baris"><span class="label">Loss</span><span class="nilai pips-rugi" id="jmlLoss">0</span></div>
+            <div class="info-baris"><span class="label">Expired</span><span class="nilai" id="jmlExpired">0</span></div>
+            <div class="info-baris"><span class="label">Total Pips Bersih</span><span class="nilai" id="totalPips">0 Pips</span></div>
+        </div>
+    </div>
+
+    <div class="konten" id="kontenAktif">
+        <div id="daftarAktif"></div>
+    </div>
+
+    <div class="konten" id="kontenRiwayat" style="display:none;">
+        <div id="daftarRiwayat"></div>
     </div>
 
     <script>
@@ -126,110 +132,211 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        const EMPAT_JAM = 4 * 60 * 60 * 1000;
+        let tabSekarang = "aktif";
+        let grafik = null;
+        let semuaData = [];
 
         auth.onAuthStateChanged(user => {
             if (!user) { window.location.href = "Login.html"; return; }
-            muatSinyal();
+            muatSemuaData();
         });
 
-        async function muatSinyal() {
+        function gantiTab(nama) {
+            tabSekarang = nama;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('aktif'));
+            document.getElementById('tabStat').classList.toggle('aktif', nama==='statistik');
+            document.getElementById('tabAktif').classList.toggle('aktif', nama==='aktif');
+            document.getElementById('tabRiwayat').classList.toggle('aktif', nama==='riwayat');
+
+            document.getElementById('kontenStat').style.display = nama==='statistik' ? 'block' : 'none';
+            document.getElementById('kontenAktif').style.display = nama==='aktif' ? 'block' : 'none';
+            document.getElementById('kontenRiwayat').style.display = nama==='riwayat' ? 'block' : 'none';
+            document.getElementById('filterAktif').style.display = nama==='aktif' ? 'block' : 'none';
+            document.getElementById('filterRiwayat').style.display = nama==='riwayat' ? 'block' : 'none';
+
+            if (nama==='statistik') gambarGrafik();
+            tampilkanData();
+        }
+
+        async function muatSemuaData() {
             try {
-                const snap = await db.collection("signal")
-                    .orderBy("waktu", "desc")
-                    .limit(10)
-                    .get();
-
-                document.getElementById("loading").style.display = "none";
-
-                const sekarang = new Date();
-                let html = "";
-                let adaSinyalAktif = false;
-
+                const snap = await db.collection("signal").orderBy("waktu", "desc").get();
+                semuaData = [];
                 snap.forEach(doc => {
                     const d = doc.data();
-                    const jenis = (d.jenis || "BUY").toUpperCase();
-                    const waktuSinyal = d.waktu ? d.waktu.toDate() : null;
-                    const status = d.status || "aktif";
-
-                    let lewatJam = false;
-                    if (waktuSinyal && status === "aktif") {
-                        const selisih = sekarang.getTime() - waktuSinyal.getTime();
-                        lewatJam = selisih > EMPAT_JAM;
-                    }
-
-                    if (lewatJam && status === "aktif") {
-                        return;
-                    }
-
-                    adaSinyalAktif = true;
-
-                    let kelasKartu = "";
-                    let labelHasil = "";
-                    if (status === "profit") {
-                        kelasKartu = "profit";
-                        labelHasil = `<span class="label-hasil hasil-profit">TERKUNCI PROFIT</span>`;
-                    } else if (status === "loss") {
-                        kelasKartu = "loss";
-                        labelHasil = `<span class="label-hasil hasil-loss">TERKUNCI LOSS</span>`;
-                    }
-
-                    const waktuTampil = waktuSinyal ? waktuSinyal.toLocaleString('id-ID') : "—";
-
-                    html += `
-                    <div class="kartu-sinyal ${kelasKartu}">
-                        <div class="baris">
-                            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
-                                <span class="label">PAIR / INSTRUMEN</span>
-                                ${labelHasil}
-                            </div>
-                            <div class="nilai">${d.pair || "—"}</div>
-                        </div>
-
-                        <div class="baris">
-                            <div class="label">HARGA MASUK</div>
-                            <div class="nilai">$ ${(d.price || 0).toFixed(2)}</div>
-                        </div>
-
-                        <div class="baris">
-                            <div class="label">JENIS</div>
-                            <div class="kotak-jenis ${jenis==='BUY'?'buy':'sell'}">${jenis}</div>
-                        </div>
-
-                        <div class="grid-harga">
-                            <div class="kotak-tp">
-                                <div class="label-tp">TP (TAKE PROFIT)</div>
-                                <div class="nilai-tp">$ ${(d.tp || 0).toFixed(2)}</div>
-                            </div>
-                            <div class="kotak-sl">
-                                <div class="label-sl">SL (STOP LOSS)</div>
-                                <div class="nilai-sl">$ ${(d.sl || 0).toFixed(2)}</div>
-                            </div>
-                        </div>
-
-                        <div class="kotak-pips">
-                            <div class="label-pips">KEUNTUNGAN PIPS</div>
-                            <div class="nilai-pips">${d.pips || 0} PIPS</div>
-                        </div>
-
-                        <div class="baris">
-                            <div class="label">CATATAN</div>
-                            <div class="kotak-catatan">${d.catatan || `TP di harga ${d.tp||'—'} dan SL di harga ${d.sl||'—'}`}</div>
-                        </div>
-
-                        <div class="waktu">${waktuTampil}</div>
-                    </div>`;
+                    semuaData.push({id:doc.id, ...d});
                 });
-
-                if (!adaSinyalAktif) {
-                    html = `<div class="tidak-ada">Belum ada sinyal terbaru</div>`;
-                }
-
-                document.getElementById("daftarSinyal").innerHTML = html;
-
+                tampilkanData();
+                siapkanStatistik();
             } catch (err) {
-                document.getElementById("loading").innerHTML = "Gagal memuat: " + err.message;
+                console.error(err);
             }
+        }
+
+        function tampilkanData() {
+            const aktif = semuaData.filter(d => {
+                const s = (d.status || "aktif").toLowerCase();
+                return s === "aktif" || s === "running";
+            });
+
+            const riwayat = semuaData.filter(d => {
+                const s = (d.status || "aktif").toLowerCase();
+                const sudahSelesai = ["profit","loss","expired"].includes(s);
+                const disembunyikan = d.disembunyikan === true;
+                return sudahSelesai && !disembunyikan;
+            });
+
+            let htmlAktif = "";
+            if (aktif.length === 0) {
+                htmlAktif = `<div class="kosong"><p>Tidak ada sinyal aktif</p></div>`;
+            } else {
+                aktif.forEach(d => htmlAktif += buatKartu(d, false));
+            }
+            document.getElementById("daftarAktif").innerHTML = htmlAktif;
+
+            let htmlRiwayat = "";
+            if (riwayat.length === 0) {
+                htmlRiwayat = `<div class="kosong"><p>Belum ada riwayat sinyal</p></div>`;
+            } else {
+                riwayat.forEach(d => htmlRiwayat += buatKartu(d, true));
+            }
+            document.getElementById("daftarRiwayat").innerHTML = htmlRiwayat;
+        }
+
+        function buatKartu(d, sudahSelesai) {
+            const pair = d.pair || "—";
+            const jenis = (d.jenis || "BUY").toUpperCase();
+            const harga = d.price || 0;
+            const tp = d.tp || 0;
+            const sl = d.sl || 0;
+            
+            const pipsUntung = d.pipsUntung || 0;
+            const pipsRugi = d.pipsRugi || 0;
+            
+            const status = (d.status || "aktif").toLowerCase();
+            const catatan = d.catatan || "-";
+            
+            const waktuBuat = d.waktu ? d.waktu.toDate().toLocaleString('id-ID') : "—";
+            const waktuTutup = d.ditutupPada ? d.ditutupPada.toDate().toLocaleString('id-ID') : "—";
+
+            let teksStatusPapan = "";
+            let kelasPapan = "";
+            let kelasStatus = "";
+            let teksStatus = "";
+            
+            if (!sudahSelesai) {
+                if (status === "aktif") {
+                    teksStatusPapan = "Aktif";
+                    kelasPapan = "papan-aktif";
+                } else if (status === "running") {
+                    teksStatusPapan = "Running";
+                    kelasPapan = "papan-running";
+                }
+            } else {
+                if (status === "profit") {
+                    kelasStatus = "profit";
+                    teksStatus = `+${pipsUntung} Pips`;
+                } else if (status === "loss") {
+                    kelasStatus = "loss";
+                    teksStatus = `-${pipsRugi} Pips`;
+                } else if (status === "expired") {
+                    kelasStatus = "expired";
+                    teksStatus = "Expired";
+                }
+            }
+
+            return `
+            <div class="kartu">
+                <div class="baris-atas">
+                    <div class="pair">${pair}</div>
+                    <div class="id-sinyal">Signal ID #${d.id.slice(-8)}</div>
+                </div>
+                <div class="info-baris">
+                    <span class="label">No. Order</span>
+                    <span class="nilai">${d.noOrder || Math.floor(Math.random()*9000000000+1000000000)}</span>
+                </div>
+                <div class="info-baris">
+                    <span class="label">Created at</span>
+                    <span class="nilai waktu-kecil">${waktuBuat}</span>
+                </div>
+
+                <div class="kotak-data">
+                    <div class="baris"><span class="label">Type</span><span class="nilai">${jenis}</span></div>
+                    <div class="baris"><span class="label">Price</span><span class="nilai">${harga}</span></div>
+                    <div class="baris"><span class="label">Take Profit</span><span class="nilai">${tp}</span></div>
+                    <div class="baris"><span class="label">Stop Loss</span><span class="nilai">${sl}</span></div>
+                </div>
+
+                <div class="info-baris">
+                    <span class="label">Pips Untung</span>
+                    <span class="nilai pips-untung">${pipsUntung}</span>
+                </div>
+                <div class="info-baris">
+                    <span class="label">Pips Rugi</span>
+                    <span class="nilai pips-rugi">${pipsRugi}</span>
+                </div>
+
+                <div class="info-baris">
+                    <span class="label">Catatan</span>
+                </div>
+                <div class="kotak-data" style="padding:10px; margin-top:4px;">
+                    <span style="color:#CBD5E1; font-size:14px;">${catatan}</span>
+                </div>
+
+                ${!sudahSelesai ? `
+                <div class="status-papan ${kelasPapan}">
+                    ${teksStatusPapan}
+                </div>
+                ` : `
+                <div class="info-baris" style="margin-top:8px;">
+                    <span class="label">Closed at</span>
+                    <span class="nilai waktu-kecil">${waktuTutup}</span>
+                </div>
+                <div class="status-badge ${kelasStatus}">
+                    ${teksStatus}
+                </div>
+                `}
+            </div>`;
+        }
+
+        function siapkanStatistik() {
+            const total = semuaData.length;
+            const profitList = semuaData.filter(d => d.status==="profit");
+            const lossList = semuaData.filter(d => d.status==="loss");
+            const expired = semuaData.filter(d => d.status==="expired");
+            
+            const totalPipsUntung = profitList.reduce((sum,d) => sum + (parseFloat(d.pipsUntung)||0), 0);
+            const totalPipsRugi = lossList.reduce((sum,d) => sum + (parseFloat(d.pipsRugi)||0), 0);
+            const totalBersih = totalPipsUntung - totalPipsRugi;
+
+            document.getElementById("jmlTotal").textContent = total;
+            document.getElementById("jmlProfit").textContent = `${profitList.length} (+${totalPipsUntung})`;
+            document.getElementById("jmlLoss").textContent = `${lossList.length} (-${totalPipsRugi})`;
+            document.getElementById("jmlExpired").textContent = expired.length;
+            
+            const elemenTotal = document.getElementById("totalPips");
+            elemenTotal.textContent = `${totalBersih >= 0 ? '+' : ''}${totalBersih} Pips`;
+            elemenTotal.className = totalBersih >= 0 ? "nilai pips-untung" : "nilai pips-rugi";
+
+            if (tabSekarang==='statistik') gambarGrafik();
+        }
+
+        function gambarGrafik() {
+            if (grafik) grafik.destroy();
+            const options = {
+                chart: {type:'donut', height:260, background:'transparent'},
+                labels: ['Profit','Loss','Expired'],
+                colors: ['#10B981','#EF4444','#64748B'],
+                series: [
+                    semuaData.filter(d=>d.status==='profit').length,
+                    semuaData.filter(d=>d.status==='loss').length,
+                    semuaData.filter(d=>d.status==='expired').length
+                ],
+                legend: {position:'bottom', labels:{colors:'#CBD5E1'}},
+                theme: {mode:'dark'}
+            };
+            grafik = new ApexCharts(document.querySelector("#grafik"), options);
+            grafik.render();
         }
     </script>
 </body>
