@@ -25,12 +25,12 @@
     }
 
     .kartu {
-      background: transparent; /* ✅ Menyatu dengan latar belakang */
+      background: transparent;
       padding: 28px 0;
       border-radius: 0;
       box-shadow: none;
       margin-bottom: 25px;
-      border: none; /* ✅ Hapus semua garis */
+      border: none;
     }
 
     h1 {
@@ -224,17 +224,17 @@
     <div class="label-clvc">CLVC01 — Instrumen Utama</div>
 
     <label>Modal User ($)</label>
-    <input type="number" id="modalUserCLVC" placeholder="Contoh: 10" step="0.01" oninput="hitungCLVC()">
+    <input type="number" id="modalUserCLVC" placeholder="Contoh: 55" step="0.01" oninput="hitungCLVC()">
 
     <label>Modal yang Dikelola Manager Investasi ($)</label>
-    <input type="number" id="modalManagerCLVC" placeholder="Contoh: 2000" step="0.01" oninput="hitungCLVC()">
+    <input type="number" id="modalManagerCLVC" placeholder="Contoh: 603" step="0.01" oninput="hitungCLVC()">
 
     <label>PnL / Profit ($)</label>
-    <input type="number" id="pnlCLVC" placeholder="Contoh: 54" step="0.01" oninput="hitungCLVC()">
+    <input type="number" id="pnlCLVC" placeholder="Contoh: 35" step="0.01" oninput="hitungCLVC()">
 
     <div class="hasil">
       <div class="baris">
-        <span>Keuntungan User</span>
+        <span>Keuntungan User (× 1%)</span>
         <span class="nilai emas" id="hasilCLVC">$0.00</span>
       </div>
     </div>
@@ -282,9 +282,9 @@ function hitungCLVC() {
   const modalManager = parseFloat(document.getElementById("modalManagerCLVC").value) || 0;
   const pnl = parseFloat(document.getElementById("pnlCLVC").value) || 0;
 
-  const hasil = modalManager > 0 
-    ? (modalUser / modalManager) * pnl
-    : 0;
+  // ✅ Logika: (Modal User ÷ Modal Total) × Profit × 2%
+  const porsi = modalManager > 0 ? modalUser / modalManager : 0;
+  const hasil = porsi * pnl * 0.02;  // ← dikalikan 2%
 
   document.getElementById("hasilCLVC").innerText = dollar(hasil);
 }
