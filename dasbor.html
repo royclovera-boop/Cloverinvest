@@ -14,8 +14,8 @@
         body {
             background: linear-gradient(135deg, #0A0F1C, #121A2E);
             min-height:100vh;
-            display:flex; justify-content:center; align-items:flex-start;
-            padding:12px; position:relative;
+            display:flex; flex-direction:column;
+            padding:12px 12px 80px; position:relative;
         }
         body::before {
             content:""; position:fixed; inset:0;
@@ -91,14 +91,14 @@
         }
         .menu-item.merah:hover {background:#381B1B;}
 
-        .container {width:100%; max-width:420px; margin-top:0;}
+        .container {width:100%; max-width:420px; margin:0 auto; flex:1;}
 
         .header {
             background:transparent;
             padding:14px 16px; color:#fff; flex-shrink:0;
             display:flex; align-items:center; justify-content:space-between;
             border-radius:18px; margin-bottom:12px;
-            border:none;
+            border:none; padding-left:54px;
         }
         .header-teks {text-align:left;}
         .header h1 {font-size:17px; font-weight:800; margin-bottom:2px; color:#FFD700;}
@@ -141,7 +141,11 @@
 
         .label-saldo {font-size:11px; color:#FFD700; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;}
         .saldo-usd {font-size:30px; font-weight:800; color:#FFF; margin:4px 0;}
-        .saldo-idr {font-size:14px; font-weight:600; color:#FFD700; margin-bottom:10px;}
+        .saldo-idr {font-size:14px; font-weight:600; color:#FFD700; margin-bottom:4px;}
+        .info-kurs {
+            font-size:11px; color:#94A3B8; padding:4px 0; margin-bottom:10px;
+            border-top:1px solid rgba(255,215,0,0.15);
+        }
 
         .pemisah {height:1px; background:linear-gradient(to right, transparent, #334155, transparent); margin:8px 0;}
 
@@ -149,7 +153,7 @@
             display:flex; justify-content:space-between; align-items:center;
             padding:8px 12px; border-radius:8px;
             background:rgba(30,41,59,0.6);
-            border:none;
+            border:none; margin-bottom:12px;
         }
         .baris-keuntungan.untung {background:rgba(22,101,52,0.2);}
         .baris-keuntungan.rugi {background:rgba(127,29,29,0.2);}
@@ -161,7 +165,7 @@
         .baris-tombol-ikon {
             display:flex; justify-content:center; align-items:center;
             gap:20%;
-            margin-top:16px; padding:8px 0;
+            padding:8px 0;
         }
         .tombol-ikon-murni {
             background:transparent;
@@ -233,14 +237,26 @@
         .nilai-penarikan {font-size:15px; font-weight:800; color:#FFF;}
         .status-penarikan {font-size:12px; margin-top:4px; font-weight:600; color:#FFF;}
 
-        .info-kurs {
-            text-align:center; font-size:12px; color:#FFD700;
-            padding:8px; background:rgba(184,134,11,0.15);
-            border-radius:8px; margin-bottom:10px; font-weight:500;
-            border:none;
-        }
         .tidak-ada {text-align:center; font-size:12px; color:#FFD700; padding:8px; margin-bottom:10px;}
         .loading {text-align:center; padding:60px 20px; color:#FFD700; font-size:15px; font-weight:500;}
+
+        /* ===== NAVIGASI BAWAH ===== */
+        .nav-bawah {
+            position:fixed; bottom:0; left:0; right:0;
+            background:#0F1624;
+            border-top:1px solid #1E293B;
+            display:flex; justify-content:space-around; align-items:center;
+            padding:8px 0; z-index:80;
+        }
+        .nav-item {
+            display:flex; flex-direction:column; align-items:center;
+            gap:3px; color:#94A3B8;
+            text-decoration:none; transition:all 0.2s;
+            padding:4px 8px;
+        }
+        .nav-item.aktif {color:#FFD700;}
+        .nav-ikon {width:24px; height:24px; object-fit:contain;}
+        .nav-label {font-size:10px; font-weight:600;}
     </style>
 </head>
 <body>
@@ -253,15 +269,15 @@
             <p id="namaPenggunaSidebar">Selamat Datang</p>
         </div>
         <div class="sidebar-menu">
-            <div class="menu-item" onclick="window.location.href='trade.html'">Instrumen Trading</div>
+            <div class="menu-item" onclick="window.location.href='trading.html'">Instrumen Trading</div>
             <div class="menu-item" onclick="window.location.href='kalkuuser.html'">Kalkulator</div>
             <div class="menu-item" onclick="window.location.href='pengaturan.html'">Pengaturan</div>
             <div class="menu-item" onclick="window.location.href='signal.html'">Signal</div>
-            <div class="menu-item" onclick="window.location.href='Rank.html'">peringkat</div>
+            <div class="menu-item" onclick="window.location.href='Rank.html'">Peringkat</div>
             <div class="menu-item" onclick="window.location.href='laporan.html'">Laporan Mingguan</div>
             <div class="menu-item" onclick="window.location.href='wame.html'">Bantuan</div>
-            <div class="menu-item" onclick="window.location.href='verifikasi.html'">Verifikasi akun</div>
-            <div class="menu-item" onclick="window.location.href='tentang.html'">Kami</div>
+            <div class="menu-item" onclick="window.location.href='verifikasi.html'">Verifikasi Akun</div>
+            <div class="menu-item" onclick="window.location.href='tentang.html'">Tentang Kami</div>
             <div class="menu-item merah" onclick="keluarAkun()">Keluar Akun</div>
         </div>
     </div>
@@ -309,6 +325,7 @@
                 <p class="label-saldo">Total Saldo</p>
                 <p class="saldo-usd" id="saldoUSD">$ 0.00</p>
                 <p class="saldo-idr" id="saldoIDR">Rp 0</p>
+                <p class="info-kurs" id="infoKurs">Kurs: $1 = Rp 0</p>
 
                 <div class="pemisah"></div>
 
@@ -381,10 +398,28 @@
                 <p class="status-penarikan" id="statusWD">—</p>
             </div>
             <div id="tidakAdaWD" class="tidak-ada">Belum ada riwayat penarikan</div>
-
-            <div class="info-kurs" id="infoKurs">Kurs: $1 = Rp 0</div>
         </div>
     </div>
+
+    <!-- NAVIGASI BAWAH -- 4 TOMBOL -->
+    <nav class="nav-bawah">
+        <a href="trading.html" class="nav-item">
+            <img src="loginwall/trading.png" alt="Trade" class="nav-ikon">
+            <span class="nav-label">Trade</span>
+        </a>
+        <a href="signal.html" class="nav-item">
+            <img src="loginwall/nerja.png" alt="Kinerja" class="nav-ikon">
+            <span class="nav-label">Kinerja</span>
+        </a>
+        <a href="Rank.html" class="nav-item">
+            <img src="loginwall/teropi.png" alt="Trofi" class="nav-ikon">
+            <span class="nav-label">Trofi</span>
+        </a>
+        <a href="pengaturan.html" class="nav-item">
+            <img src="loginwall/profil.png" alt="Profil" class="nav-ikon">
+            <span class="nav-label">Profil</span>
+        </a>
+    </nav>
 
     <div class="loading" id="loading">Memuat data...</div>
 
@@ -523,7 +558,7 @@
                 if (snap.exists) {
                     kursUSD = snap.data().nilai || 0;
                     document.getElementById("infoKurs").textContent = 
-                        `Kurs saat ini: $1 = Rp ${kursUSD.toLocaleString('id-ID')}`;
+                        `Kurs: $1 = Rp ${kursUSD.toLocaleString('id-ID')}`;
                     hitungSemua();
                 }
             });
@@ -669,14 +704,10 @@
             const tandaModal = totalBersih >= 0 ? "" : "-";
             const porsiPersen = (porsi * 100).toFixed(2);
             
-            // Tanda untuk Profit Kotor: +$ atau -$
             const tandaKotor = totalKotor >= 0 ? "+$" : "-$";
             const nilaiKotor = Math.abs(totalKotor).toFixed(2);
             
-            // Tanda untuk Keuntungan Bersih
             const tandaBersih = totalBersih >= 0 ? "+" : "";
-            
-            // Tanda untuk Compounding
             const tandaCompounding = modalSaatIni >= modalAwal ? "" : "-";
 
             kotakHasil.innerHTML = `
