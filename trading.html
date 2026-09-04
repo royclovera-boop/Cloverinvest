@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRADING INSTRUMEN — CLOVERA UNION</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.49.0/dist/apexcharts.min.js"></script>
+
+    <style>
+        * {margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Roboto, sans-serif;}
+        html,body {height:100%;}
+        body {
+            background: #0F1113;
+            min-height:100vh; color:#E5E7EB; padding:12px;
+        }
+        .container {max-width:720px; margin:0 auto;}
+
+        .header {padding:12px 0 16px; display:flex; justify-content:space-between; align-items:center;}
+        .header h1 {font-size:18px; color:#FFFFFF; font-weight:700;}
+        .saldo-atas {
+            background:#1F2937; padding:8px 16px; border-radius:20px;
+            font-weight:700; font-size:15px;
+        }
+        .saldo-atas.positif {color:#6EE7B7;}
+        .saldo-atas.negatif {color:#FCA5A5;}
+
+        .status-kartu {
+            background:#1F2937; border-radius:12px; padding:12px 16px; margin-bottom:12px;
+        }
+        .status-saatini {
+            display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+            font-size:14px;
+        }
+        .nama-instrumen-saatini {
+            background:rgba(251,191,36,0.15); color:#FBBF24;
+            padding:4px 12px; border-radius:20px; font-weight:700;
+        }
+        .kotak-pending {
+            margin-top:8px; padding:8px 12px; background:rgba(251,146,60,0.15);
+            border-radius:8px; display:none; font-size:13px; color:#FCD34D;
+        }
+
+        /* ✅ TANPA BATAS TINGGI & TANPA GULIR */
+        .instrumen-list {
+            display:flex; flex-direction:column; gap:8px; margin-bottom:12px;
+        }
+
+        .kartu-instrumen {
+            background:#1F2937; border-radius:10px; padding:12px 14px;
+            cursor:pointer; transition:all 0.2s;
+            display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center;
+        }
+        .kartu-instrumen:hover {background:#273449;}
+        .kartu-instrumen.terpilih {box-shadow:0 0 0 2px #FBBF24;}
+
+        .logo-box {width:36px; height:36px; border-radius:50%; background:#374151; display:flex; align-items:center; justify-content:center;}
+        .logo {width:20px; height:20px; object-fit:contain;}
+        .info-kiri {display:flex; flex-direction:column; gap:2px;}
+        .nama-instrumen {font-size:14px; font-weight:700; color:#fff;}
+        .deskripsi-instrumen {font-size:11px; color:#9CA3AF;}
+        .info-kanan {display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
+        .harga {font-size:15px; font-weight:700; color:#fff;}
+        .persentase {font-size:12px; font-weight:600;}
+        .naik {color:#3B82F6;}
+        .turun {color:#EF4444;}
+        .sama {color:#9CA3AF;}
+        .grafik-mini {width:70px; height:36px;}
+
+        .grafik-besar-box {
+            background:#121519; border-radius:12px; padding:12px; margin-bottom:12px;
+            border:1px solid #1F2937; min-height:450px;
+        }
+        .judul-grafik {
+            display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
+        }
+        .nama-grafik {display:flex; align-items:center; gap:6px; font-weight:700; font-size:16px;}
+        .candlestick-container {width:100%; height:400px;}
+        .pesan-kosong {text-align:center; padding:80px 20px; color:#6B7280;}
+
+        .tombol-simpan {
+            background:linear-gradient(180deg, #10B981, #059669);
+            color:#fff; border:none; padding:14px; border-radius:10px;
+            font-size:15px; font-weight:700; cursor:pointer; width:100%; margin-top:4px;
+        }
+        .tombol-simpan:disabled {opacity:0.5; cursor:not-allowed;}
+        .pesan {margin-top:10px; padding:10px 14px; border-radius:8px; display:none; font-size:13px;}
+        .info {background:rgba(59,130,246,0.15); color:#93C5FD;}
+        .error {background:rgba(239,68,68,0.15); color:#FCA5A5;}
+        .loading {text-align:center; padding:60px 20px; color:#9CA3AF;}
+        .bagian-login {text-align:center; padding:40px 20px;}
+        .bagian-login h3 {color:#FBBF24; margin-bottom:16px;}
+        .tombol-masuk {
+            background:linear-gradient(180deg, #3B82F6, #2563EB);
+            color:#fff; border:none; padding:12px 24px; border-radius:10px;
+            font-size:15px; font-weight:700; cursor:pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>INSTRUMEN TRADING</h1>
+            <div class="saldo-atas" id="saldoAtas">—</div>
+        </div>
+
+        <div id="bagianLogin" class="bagianLogin" style="display:none;">
+            <h3>Silakan Login Dulu</h3>
+            <button class="tombol-masuk" onclick="window.location.href='Login.html'">MASUK KE AKUN</button>
+        </div>
+
+        <div id="bagianData" style="display:none;">
+            <div class="status-kartu">
+                <div class="status-saatini">
+                    Instrumen Aktif:
+                    <span class="nama-instrumen-saatini" id="instrumenSaatIni">— Belum Dipilih —</span>
+                </div>
+                <div id="kotakPending" class="kotak-pending">
+                    Menunggu persetujuan: <strong id="namaPermintaan"></strong>
+                </div>
+            </div>
+
+            <div style="background:rgba(251,146,60,0.1); border-radius:10px; padding:12px 16px; margin-bottom:12px; color:#FCD34D; font-size:12px; line-height:1.6;">
+                Pilih instrumen di bawah untuk melihat grafik
+            </div>
+
+            <div class="instrumen-list" id="daftarInstrumen"></div>
+
+            <div class="grafik-besar-box" id="grafikBox" style="display:none;">
+                <div class="judul-grafik">
+                    <div class="nama-grafik" id="namaGrafik">—</div>
+                    <span style="font-size:12px; color:#6B7280;" id="jumlahData"></span>
+                </div>
+                <div class="candlestick-container" id="candlestickGrafik"></div>
+            </div>
+            <div id="pesanPilih" class="pesan-kosong">👆 Pilih instrumen di atas untuk melihat grafik</div>
+
+            <button class="tombol-simpan" id="tombolAjukan" onclick="ajukanPermintaan()" style="display:none;">AJUKAN PERUBAHAN</button>
+            <div id="pesanSimpan" class="pesan"></div>
+
+            <div style="margin-top:14px; padding:12px 16px; background:rgba(251,191,36,0.08); border-radius:10px; font-size:12px; color:#FCD34D; line-height:1.6;">
+                Alur: Pilih → Ajukan → Menunggu Admin → Disetujui → Berlaku otomatis.
+            </div>
+        </div>
+
+        <div id="loading" class="loading">Memverifikasi akun...</div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAuWAjpoztwQtCnrHyV18kRA5AaDFcsyGo",
+            authDomain: "jurnal-trade-pro.firebaseapp.com",
+            projectId: "jurnal-trade-pro"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let userSekarang = null;
+        let uidPengguna = null;
+        let emailPengguna = null;
+        let instrumenTerpilih = null;
+        let namaInstrumenTerpilih = null;
+        let grafikCandle = null;
+        let miniGrafikInstans = {};
+        let instrumenLamaPengguna = null;
+        let namaInstrumenLamaPengguna = null;
+
+        const daftarInstrumen = [
+            {id:'managerXauusd', kode:'XAU', nama:'XAU/USD', deskripsi:'Gold vs US Dollar', logo:'loginwall/xau.png'},
+            {id:'managerBtcusd', kode:'BTC', nama:'BTC/USD', deskripsi:'Bitcoin vs US Dollar', logo:'loginwall/btc.png'},
+            {id:'managerAudusd', kode:'AUD', nama:'AUD/USD', deskripsi:'Australian vs US Dollar', logo:'loginwall/aud.png'},
+            {id:'tradingData', kode:'TRD', nama:'CLVC01', deskripsi:'Clovera Index', logo:'loginwall/td.png'}
+        ];
+
+        function formatUang(nilai) {
+            const tanda = nilai >= 0 ? "+$" : "-$";
+            return tanda + Math.abs(nilai).toFixed(2);
+        }
+
+        function hitungPersentase(sebelum, sesudah) {
+            const dasar = Math.abs(sebelum);
+            if (dasar === 0) return 0;
+            return ((sesudah - sebelum) / dasar) * 100;
+        }
+
+        function buatKartuInstrumen(item) {
+            const container = document.getElementById('daftarInstrumen');
+            const kartu = document.createElement('div');
+            kartu.className = 'kartu-instrumen';
+            kartu.id = `kartu-${item.kode}`;
+            kartu.setAttribute('onclick', `pilihInstrumen('${item.id}', '${item.nama}', '${item.kode}')`);
+            kartu.innerHTML = `
+                <div class="logo-box">
+                    <img src="${item.logo}" class="logo" alt="${item.kode}" onerror="this.style.display='none'">
+                </div>
+                <div class="info-kiri">
+                    <div class="nama-instrumen">${item.nama}</div>
+                    <div class="deskripsi-instrumen">${item.deskripsi}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="grafik-mini" id="miniGrafik-${item.kode}"></div>
+                    <div class="info-kanan">
+                        <div class="harga" id="harga-${item.kode}">—</div>
+                        <div class="persentase" id="persen-${item.kode}">—</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(kartu);
+        }
+
+        auth.onAuthStateChanged(async user => {
+            document.getElementById("loading").style.display = "none";
+            if (user) {
+                userSekarang = user;
+                uidPengguna = user.uid;
+                emailPengguna = user.email;
+                document.getElementById("bagianData").style.display = "block";
+                daftarInstrumen.forEach(item => buatKartuInstrumen(item));
+                await muatDataPengguna();
+                await muatSemuaInstrumen();
+                pantauPermintaanPending();
+            } else {
+                document.getElementById("bagianLogin").style.display = "block";
+            }
+        });
+
+        async function muatDataPengguna() {
+            try {
+                const snap = await db.doc("pengguna/" + uidPengguna).get();
+                if (snap.exists) {
+                    const data = snap.data();
+                    instrumenLamaPengguna = data.instrumenAktif || null;
+                    namaInstrumenLamaPengguna = data.instrumenAktifNama || "Belum Ada";
+                    document.getElementById("instrumenSaatIni").textContent = namaInstrumenLamaPengguna;
+                }
+            } catch (err) {
+                console.log("Belum ada data:", err.message);
+            }
+        }
+
+        function pantauPermintaanPending() {
+            if (!uidPengguna) return;
+            db.collection("permintaanInstrumen").doc(uidPengguna).onSnapshot(snap => {
+                if (snap.exists && snap.data().status === "PENDING") {
+                    document.getElementById("kotakPending").style.display = "block";
+                    document.getElementById("namaPermintaan").textContent = snap.data().instrumenBaruNama;
+                } else {
+                    document.getElementById("kotakPending").style.display = "none";
+                }
+            });
+        }
+
+        async function muatSemuaInstrumen() {
+            for(const item of daftarInstrumen) {
+                try {
+                    const snapData = await db.collection(item.id).orderBy("timestamp", "asc").get();
+                    if (!snapData.empty) {
+                        let saldoAkumulasi = 0;
+                        let semuaNilai = [];
+                        
+                        snapData.docs.forEach(doc => {
+                            const pl = Number(doc.data().pl) || 0;
+                            saldoAkumulasi += pl;
+                            semuaNilai.push(saldoAkumulasi);
+                        });
+                        
+                        let nilaiSebelum = semuaNilai.length >= 2 ? semuaNilai[semuaNilai.length - 2] : 0;
+                        let nilaiSekarang = semuaNilai[semuaNilai.length - 1] || 0;
+                        
+                        document.getElementById(`harga-${item.kode}`).textContent = formatUang(nilaiSekarang);
+                        
+                        const elPersen = document.getElementById(`persen-${item.kode}`);
+                        const persen = hitungPersentase(nilaiSebelum, nilaiSekarang);
+                        const selisih = nilaiSekarang - nilaiSebelum;
+                        
+                        if (selisih > 0) {
+                            elPersen.innerHTML = "↑ +" + persen.toFixed(2) + "%";
+                            elPersen.className = "persentase naik";
+                        } else if (selisih < 0) {
+                            elPersen.innerHTML = "↓ -" + Math.abs(persen).toFixed(2) + "%";
+                            elPersen.className = "persentase turun";
+                        } else {
+                            elPersen.textContent = "— SAMA";
+                            elPersen.className = "persentase sama";
+                        }
+                        
+                        gambarGrafikMini(item.kode, semuaNilai.slice(-15), selisih >= 0);
+                    }
+                } catch(e) {
+                    console.log("Error:", e.message);
+                }
+            }
+        }
+
+        function gambarGrafikMini(kode, data, naik) {
+            const el = document.getElementById(`miniGrafik-${kode}`);
+            if (!el || typeof ApexCharts === 'undefined') return;
+            if (miniGrafikInstans[kode]) miniGrafikInstans[kode].destroy();
+            
+            const opsi = {
+                chart: { type: 'line', height:36, width:70, sparkline: { enabled: true } },
+                stroke: { curve: 'smooth', width: 2 },
+                colors: [naik ? '#3B82F6' : '#EF4444'],
+                markers: { size: 0 },
+                series: [{ data: data }],
+                tooltip: { enabled: false }
+            };
+            miniGrafikInstans[kode] = new ApexCharts(el, opsi);
+            miniGrafikInstans[kode].render();
+        }
+
+        async function pilihInstrumen(idDokumen, namaTampil, kode) {
+            instrumenTerpilih = idDokumen;
+            namaInstrumenTerpilih = namaTampil;
+
+            document.querySelectorAll('.kartu-instrumen').forEach(k=>k.classList.remove('terpilih'));
+            daftarInstrumen.forEach(item => {
+                if (item.id === idDokumen) {
+                    document.getElementById(`kartu-${item.kode}`).classList.add('terpilih');
+                }
+            });
+
+            document.getElementById('namaGrafik').innerHTML = `<span style="color:#FBBF24; font-weight:bold;">${kode}</span> — ${namaTampil}`;
+            document.getElementById('grafikBox').style.display = "block";
+            document.getElementById('pesanPilih').style.display = "none";
+            document.getElementById('tombolAjukan').style.display = "block";
+
+            await muatGrafikLilin(idDokumen);
+        }
+
+        async function muatGrafikLilin(idDokumen) {
+            const container = document.getElementById('candlestickGrafik');
+            const jumlahEl = document.getElementById('jumlahData');
+            
+            try {
+                if (typeof ApexCharts === 'undefined') {
+                    container.innerHTML = `<div style="text-align:center; padding:60px 20px; color:#F87171;">⚠️ Pustaka belum siap. Muat ulang halaman.</div>`;
+                    return;
+                }
+
+                const snap = await db.collection(idDokumen).orderBy("timestamp", "asc").limit(40).get();
+                jumlahEl.textContent = `Data: ${snap.size} baris`;
+
+                if (snap.empty) {
+                    container.innerHTML = `<div style="text-align:center; padding:60px 20px; color:#6B7280;">Belum ada data</div>`;
+                    document.getElementById('saldoAtas').style.display = "none";
+                    return;
+                }
+
+                let saldoAkumulasi = 0;
+                let saldoSebelumnya = 0;
+                let dataLilin = [];
+
+                snap.docs.forEach(doc => {
+                    const d = doc.data();
+                    const pl = Number(d.pl) || 0;
+                    
+                    const buka = saldoSebelumnya;
+                    saldoAkumulasi += pl;
+                    const tutup = saldoAkumulasi;
+                    
+                    const rentang = Math.abs(pl) * 0.5;
+                    const tinggi = Math.max(buka, tutup) + rentang;
+                    const rendah = Math.min(buka, tutup) - rentang;
+
+                    let waktu = d.label || d.periode || d.namaBulan;
+                    if (!waktu && d.timestamp) {
+                        waktu = new Date(d.timestamp.toDate()).toLocaleDateString('id-ID', {day:'2-digit', month:'short'});
+                    }
+                    if (!waktu) waktu = '-';
+
+                    dataLilin.push({ x: waktu, y: [buka, tinggi, rendah, tutup] });
+                    saldoSebelumnya = saldoAkumulasi;
+                });
+
+                const saldoAtas = document.getElementById('saldoAtas');
+                saldoAtas.style.display = "inline-block";
+                saldoAtas.textContent = formatUang(saldoAkumulasi);
+                saldoAtas.className = "saldo-atas " + (saldoAkumulasi >= 0 ? "positif" : "negatif");
+
+                if (grafikCandle) grafikCandle.destroy();
+
+                const opsi = {
+                    chart: {
+                        type: 'candlestick',
+                        height: 400,
+                        foreColor: '#9CA3AF',
+                        background: 'transparent',
+                        toolbar: { show: true, tools: {download:true, zoom:true, reset:true} }
+                    },
+                    series: [{ name: 'Harga', data: dataLilin }],
+                    xaxis: {
+                        type: 'category',
+                        labels: {style:{colors:'#6B7280'}},
+                        axisBorder:{color:'#1F2937'}
+                    },
+                    yaxis: {
+                        opposite: true,
+                        labels: {
+                            style:{colors:'#6B7280'},
+                            formatter: (val) => '$' + val.toFixed(2)
+                        }
+                    },
+                    grid: { borderColor: '#1F2937' },
+                    plotOptions: {
+                        candlestick: {
+                            colors: { upward: '#3B82F6', downward: '#EF4444' },
+                            wick: { useFillColor: true }
+                        }
+                    },
+                    tooltip: {
+                        theme: 'dark',
+                        y: {
+                            formatter: function(val) {
+                                return 'Buka: $' + val[0].toFixed(2) + 
+                                       ' | Tinggi: $' + val[1].toFixed(2) + 
+                                       ' | Rendah: $' + val[2].toFixed(2) + 
+                                       ' | Tutup: $' + val[3].toFixed(2);
+                            }
+                        }
+                    }
+                };
+
+                grafikCandle = new ApexCharts(container, opsi);
+                await grafikCandle.render();
+
+            } catch (err) {
+                console.error("Error:", err);
+                container.innerHTML = `<div style="text-align:center; padding:60px 20px; color:#F87171;">Error: ${err.message}</div>`;
+            }
+        }
+
+        async function ajukanPermintaan() {
+            if(!instrumenTerpilih) { alert("Pilih instrumen terlebih dahulu!"); return; }
+
+            if(!confirm(`Ajukan perubahan:\n\nDari: ${namaInstrumenLamaPengguna}\nMenjadi: ${namaInstrumenTerpilih}\n\nMenunggu persetujuan Admin. Lanjutkan?`)) return;
+
+            const pesan = document.getElementById('pesanSimpan');
+            pesan.style.display = "none";
+
+            try {
+                await db.collection("permintaanInstrumen").doc(uidPengguna).set({
+                    uidPengguna: uidPengguna,
+                    emailPengguna: emailPengguna,
+                    namaPengguna: userSekarang.displayName || "Pengguna",
+                    instrumenLama: instrumenLamaPengguna,
+                    instrumenLamaNama: namaInstrumenLamaPengguna,
+                    instrumenBaru: instrumenTerpilih,
+                    instrumenBaruNama: namaInstrumenTerpilih,
+                    status: "PENDING",
+                    waktuDiajukan: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                pesan.className = "pesan info";
+                pesan.textContent = `Berhasil! ${namaInstrumenLamaPengguna} → ${namaInstrumenTerpilih}`;
+                pesan.style.display = "block";
+                setTimeout(() => pesan.style.display = "none", 6000);
+
+            } catch (err) {
+                pesan.style.display = "block";
+                pesan.className = "pesan error";
+                pesan.textContent = err.code === "permission-denied" 
+                    ? "Masih ada permintaan yang belum diproses!" 
+                    : "Gagal: " + err.message;
+            }
+        }
+    </script>
+</body>
+</html>
