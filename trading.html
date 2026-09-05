@@ -461,7 +461,7 @@
                 return;
             }
 
-            if(!confirm(`Transfer dana :\n\nDari: ${namaInstrumenLamaPengguna}\nKe: ${namaInstrumenTerpilih}\n\nMenunggu persetujuan Admin. Lanjutkan?`)) return;
+            if(!confirm(`Transfer dana :\n\nDari: ${namaInstrumenLamaPengguna}\nKe: ${namaInstrumenTerpilih}\n\nTetap, beli?`)) return;
 
             try {
                 await db.collection("permintaanInstrumen").doc(uidPengguna).set({
@@ -490,7 +490,7 @@
                 return;
             }
 
-            if(!confirm(`JUAL:\n\nInstrumen saat ini: ${namaInstrumenLamaPengguna}\n\nAkan berhenti berinvestasi. Lanjutkan?`)) return;
+            if(!confirm(`JUAL:\n\nInstrumen saat ini: ${namaInstrumenLamaPengguna}\n\nTetap, jual?`)) return;
 
             try {
                 await db.collection("permintaanInstrumen").doc(uidPengguna).set({
